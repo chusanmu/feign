@@ -27,6 +27,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface RequestLine {
 
+  /**
+   * 请求方法 + uri
+   * @return
+   */
   String value();
 
   boolean decodeSlash() default true;
