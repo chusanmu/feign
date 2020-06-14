@@ -74,21 +74,29 @@ public interface Decoder {
    * @throws IOException will be propagated safely to the caller.
    * @throws DecodeException when decoding failed due to a checked exception besides IOException.
    * @throws FeignException when decoding succeeds, but conveys the operation failed.
+   * TODO: 将HTTP响应feign.Response解码为指定类型的单一对象，1.响应码是2xx， 2.方法返回值既不是void 也不是Null, 也不是feign.Response类型
+   *        response代表请求的响应，type:代表请求返回类型
    */
   Object decode(Response response, Type type) throws IOException, DecodeException, FeignException;
 
   /** Default implementation of {@code Decoder}. */
+  /**
+   * TODO: feign默认使用的解码器
+   */
   public class Default extends StringDecoder {
 
     @Override
     public Object decode(Response response, Type type) throws IOException {
+      // TODO: 404和202特殊处理
       if (response.status() == 404 || response.status() == 204)
         return Util.emptyValueOf(type);
       if (response.body() == null)
         return null;
+      // TODO: 不仅支持String，同时也支持到了返回值是字节数组的情况
       if (byte[].class.equals(type)) {
         return Util.toByteArray(response.body().asInputStream());
       }
+      // TODO: 处理字符串
       return super.decode(response, type);
     }
   }

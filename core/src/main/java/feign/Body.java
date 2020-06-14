@@ -32,7 +32,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <br>
  * Note that if you'd like curly braces literally in the body, urlencode them first.
  *
- * @see RequestTemplate#expand(String, Map)
+ * @see RequestTemplate#expand(String, Map) TODO: 它只能标注在方法上
  */
 @Target(METHOD)
 @Retention(RUNTIME)

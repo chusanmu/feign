@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
  * <li>unresolved variables are preserved as literals</li>
  * <li>all literals are pct-encoded</li>
  * </ol>
+ * TODO: 用于处理RequestLine中的模板
  */
 public class UriTemplate extends Template {
 

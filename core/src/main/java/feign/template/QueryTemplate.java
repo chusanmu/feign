@@ -30,13 +30,22 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * Template for a Query String parameter.
+ * Template for a Query String parameter. TODO: 用于处理@QueryMap 的 template
  */
 public final class QueryTemplate {
 
   private static final String UNDEF = "undef";
+  /**
+   * 一个key可以对应多个值
+   */
   private List<Template> values;
+  /**
+   * 说明name也是一个模板
+   */
   private final Template name;
+  /**
+   * 拼接符，默认是&
+   */
   private final CollectionFormat collectionFormat;
   private boolean pure = false;
 

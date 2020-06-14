@@ -20,6 +20,9 @@ import feign.DeclarativeContract;
 import feign.MethodMetadata;
 import feign.Request;
 
+/**
+ * TODO: 处理spring系列的注解啊
+ */
 public class SpringContract extends DeclarativeContract {
 
   static final String ACCEPT = "Accept";

@@ -65,6 +65,9 @@ import static java.lang.String.format;
  */
 public interface Encoder {
   /** Type literal for {@code Map<String, ?>}, indicating the object to encode is a form. */
+  /**
+   * 变量输入到map，表示要编码的对象是一个表单
+   */
   Type MAP_STRING_WILDCARD = Util.MAP_STRING_WILDCARD;
 
   /**
@@ -75,21 +78,33 @@ public interface Encoder {
    *        indicates form encoding.
    * @param template the request template to populate.
    * @throws EncodeException when encoding failed due to a checked exception.
+   * TODO: 唯一的接口方法: object 需要被编码的对象，有可能是POJO，有可能是字符串，bodyType: body类型， requestTemplate: 请求模板
    */
   void encode(Object object, Type bodyType, RequestTemplate template) throws EncodeException;
 
   /**
    * Default implementation of {@code Encoder}.
+   * TODO: 默认的编码器，缺省实现
    */
   class Default implements Encoder {
 
+    /**
+     * 默认的编码器，仅仅能处理String类型的，byte[]类型的
+     * @param object what to encode as the request body.
+     * @param bodyType the type the object should be encoded as. {@link #MAP_STRING_WILDCARD}
+     *        indicates form encoding.
+     * @param template the request template to populate.
+     */
     @Override
     public void encode(Object object, Type bodyType, RequestTemplate template) {
+      // TODO: 1. 如果是bodyType是字符串类型，那就把object直接toString()后放进去即可，这是特殊的处理
       if (bodyType == String.class) {
         template.body(object.toString());
+        // TODO: 如果是字节数组类型，那就强转放进去
       } else if (bodyType == byte[].class) {
         template.body((byte[]) object, null);
       } else if (object != null) {
+        // TODO: 否则报错
         throw new EncodeException(
             format("%s is not a type supported by this encoder.", object.getClass()));
       }

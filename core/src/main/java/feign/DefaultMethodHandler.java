@@ -36,6 +36,7 @@ final class DefaultMethodHandler implements MethodHandler {
 
   public DefaultMethodHandler(Method defaultMethod) {
     try {
+      // TODO: 从Method里拿到方法句柄，赋值给unboundHandle
       Class<?> declaringClass = defaultMethod.getDeclaringClass();
       Field field = Lookup.class.getDeclaredField("IMPL_LOOKUP");
       field.setAccessible(true);
@@ -53,6 +54,7 @@ final class DefaultMethodHandler implements MethodHandler {
    * Bind this handler to a proxy object. After bound, DefaultMethodHandler#invoke will act as if it
    * was called on the proxy object. Must be called once and only once for a given instance of
    * DefaultMethodHandler
+   * TODO: 把目标对象(代理对象)绑定到方法句柄上，这样unboundHandle就变成绑定好的handle了，这样invoke就可以调用了
    */
   public void bindTo(Object proxy) {
     if (handle != null) {
@@ -65,6 +67,7 @@ final class DefaultMethodHandler implements MethodHandler {
   /**
    * Invoke this method. DefaultMethodHandler#bindTo must be called before the first time invoke is
    * called.
+   * 调用目标方法，调用前，需要确保已经绑定了目标对象
    */
   @Override
   public Object invoke(Object[] argv) throws Throwable {

@@ -18,10 +18,17 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
- * Controls reflective method dispatch.
+ * Controls reflective method dispatch. TODO: 控制反射方法调度
  */
 public interface InvocationHandlerFactory {
 
+  /**
+   * TODO: 为target创建一个InvocationHandler 反射调用对象
+   * 
+   * @param target
+   * @param dispatch
+   * @return
+   */
   InvocationHandler create(Target target, Map<Method, MethodHandler> dispatch);
 
   /**
@@ -37,6 +44,7 @@ public interface InvocationHandlerFactory {
 
     @Override
     public InvocationHandler create(Target target, Map<Method, MethodHandler> dispatch) {
+      // TODO: 返回一个默认的FeignInvocationHandler， 从 dispatch中 根据method，拿相应的methodHandler去执行
       return new ReflectiveFeign.FeignInvocationHandler(target, dispatch);
     }
   }

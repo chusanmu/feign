@@ -31,15 +31,16 @@ public @interface Param {
   String value();
 
   /**
-   * How to expand the value of this parameter, if {@link ToStringExpander} isn't adequate.
+   * How to expand the value of this parameter, if {@link ToStringExpander} isn't adequate. TODO:
+   * 如何进行填充参数, 默认toString进行填充
    */
   Class<? extends Expander> expander() default ToStringExpander.class;
 
   /**
    * {@code encoded} has been maintained for backward compatibility and should be deprecated. We no
    * longer need it as values that are already pct-encoded should be identified during expansion and
-   * passed through without any changes
-   *
+   * passed through without any changes 是否转义，默认不转义，直接放上去
+   * 
    * @see QueryMap#encoded
    * @deprecated
    */

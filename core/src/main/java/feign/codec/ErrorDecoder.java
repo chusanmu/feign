@@ -65,6 +65,7 @@ import java.util.Map;
  * It is commonly the case that 404 (Not Found) status has semantic value in HTTP apis. While the
  * default behavior is to raise exeception, users can alternatively enable 404 processing via
  * {@link feign.Feign.Builder#decode404()}.
+ * TODO: 发生错误，异常情况时的解码器，允许对异常进行特殊处理
  */
 public interface ErrorDecoder {
 
@@ -80,16 +81,25 @@ public interface ErrorDecoder {
    * @return Exception IOException, if there was a network error reading the response or an
    *         application-specific exception decoded by the implementation. If the throwable is
    *         retryable, it should be wrapped, or a subtype of {@link RetryableException}
+   *         TODO: 从response最终解码出的必须是个异常类型
+   *         methodKey 由feign.Feign#configKey生成
    */
   public Exception decode(String methodKey, Response response);
 
+  /**
+   * feign的缺省实现
+   */
   public static class Default implements ErrorDecoder {
 
     private final RetryAfterDecoder retryAfterDecoder = new RetryAfterDecoder();
 
     @Override
     public Exception decode(String methodKey, Response response) {
+      /**
+       * TODO: 根据状态码，提取出异常类型，并且统一包装为FeignException
+       */
       FeignException exception = errorStatus(methodKey, response);
+      // TODO: 检查是否需要把异常类型包装为RetryableException
       Date retryAfter = retryAfterDecoder.apply(firstOrNull(response.headers(), RETRY_AFTER));
       if (retryAfter != null) {
         return new RetryableException(

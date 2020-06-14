@@ -51,7 +51,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </ul>
  * <br>
  * Once this conversion is applied, the query keys and resulting String values follow the same
- * contract as if they were set using {@link RequestTemplate#query(String, String...)}.
+ * contract as if they were set using {@link RequestTemplate#query(String, String...)}. TODO:
+ * 只能放在Map参数前面
  */
 @SuppressWarnings("deprecation")
 @Retention(RUNTIME)

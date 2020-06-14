@@ -148,6 +148,9 @@ public abstract class DeclarativeContract extends BaseContract {
     return false;
   }
 
+
+  /* ---------------- 由子类决定去注册class method parameter支持处理哪些注解，然后父类进行处理啊 -------------- */
+
   /**
    * Called while class annotations are being processed
    *

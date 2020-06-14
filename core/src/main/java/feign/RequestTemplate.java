@@ -37,15 +37,30 @@ import static feign.Util.*;
 public final class RequestTemplate implements Serializable {
 
   private static final Pattern QUERY_STRING_PATTERN = Pattern.compile("(?<!\\{)\\?");
+  /**
+   * key是name, QueryTemplate表示遵循rfc6570规范的模板
+   */
   private final Map<String, QueryTemplate> queries = new LinkedHashMap<>();
   private final Map<String, HeaderTemplate> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+  /**
+   * 此处target表示最终准备请求的url,并非feign.Target
+   */
   private String target;
+  /**
+   * 拼接在url后面的片段，比如#book
+   */
   private String fragment;
   private boolean resolved = false;
   private UriTemplate uriTemplate;
   private BodyTemplate bodyTemplate;
   private HttpMethod method;
+  /**
+   * UTF8编码
+   */
   private transient Charset charset = Util.UTF_8;
+  /**
+   * 请求body体，内包含bodyTemplate字符串
+   */
   private Request.Body body = Request.Body.empty();
   private boolean decodeSlash = true;
   private CollectionFormat collectionFormat = CollectionFormat.EXPLODED;
@@ -160,7 +175,7 @@ public final class RequestTemplate implements Serializable {
   /**
    * Resolve all expressions using the variable value substitutions provided. Variable values will
    * be pct-encoded, if they are not already.
-   *
+   * TODO: 使用提供的变量值替换解析所有表达式, 比较重要的方法，用于填充四大模板Template, uriTemplate, QueryTemplate, HeaderTemplate, BodyTemplate。
    * @param variables containing the variable values to use when resolving expressions.
    * @return a new Request Template with all of the variables resolved.
    */
@@ -169,8 +184,10 @@ public final class RequestTemplate implements Serializable {
     StringBuilder uri = new StringBuilder();
 
     /* create a new template form this one, but explicitly */
+    // TODO: 在基础上复制一份出来，所以操作的是最新的
     RequestTemplate resolved = RequestTemplate.from(this);
 
+    // TODO: 解析uriTemplate
     if (this.uriTemplate == null) {
       /* create a new uri template using the default root */
       this.uriTemplate = UriTemplate.create("", !this.decodeSlash, this.charset);
@@ -182,6 +199,7 @@ public final class RequestTemplate implements Serializable {
     }
 
     /*
+       TODO: 解析查询参数模板，这块比较复制，用&进行连接
      * for simplicity, combine the queries into the uri and use the resulting uri to seed the
      * resolved template.
      */
@@ -191,6 +209,7 @@ public final class RequestTemplate implements Serializable {
        */
       resolved.queries(Collections.emptyMap());
       StringBuilder query = new StringBuilder();
+      // TODO: 处理模板，一个模板一个模板的处理
       Iterator<QueryTemplate> queryTemplates = this.queries.values().iterator();
 
       while (queryTemplates.hasNext()) {
@@ -203,7 +222,7 @@ public final class RequestTemplate implements Serializable {
           }
         }
       }
-
+      // TODO: 设置查询参数
       String queryString = query.toString();
       if (!queryString.isEmpty()) {
         Matcher queryMatcher = QUERY_STRING_PATTERN.matcher(uri);
@@ -221,6 +240,9 @@ public final class RequestTemplate implements Serializable {
     resolved.uri(uri.toString());
 
     /* headers */
+    /**
+     * TODO: 处理请求头模板
+     */
     if (!this.headers.isEmpty()) {
       /*
        * same as the query string, we only want to keep resolved values, so clear the header map on
@@ -240,7 +262,7 @@ public final class RequestTemplate implements Serializable {
         }
       }
     }
-
+    // TODO: 处理body模板，body里持有bodyTemplate的引用，所以底层依旧是bodyTemplate.expend(variables)
     if (this.bodyTemplate != null) {
       resolved.body(this.bodyTemplate.expand(variables));
     }
@@ -272,6 +294,7 @@ public final class RequestTemplate implements Serializable {
    *
    * @return a new Request instance.
    * @throws IllegalStateException if this template has not been resolved.
+   * TODO: 将自己转换为标准的Requst对象，转换之前需要确保所有的template模板都已经被解析过了
    */
   public Request request() {
     if (!this.resolved) {
@@ -282,6 +305,7 @@ public final class RequestTemplate implements Serializable {
 
   /**
    * Set the Http Method.
+   *  TODO: 给请求模板指定Http方法
    *
    * @param method to use.
    * @return a RequestTemplate for chaining.
@@ -327,6 +351,7 @@ public final class RequestTemplate implements Serializable {
    */
   public RequestTemplate decodeSlash(boolean decodeSlash) {
     this.decodeSlash = decodeSlash;
+    // TODO: 对uriTemplate进行了重新赋值
     this.uriTemplate =
         UriTemplate.create(this.uriTemplate.toString(), !this.decodeSlash, this.charset);
     if (!this.queries.isEmpty()) {
@@ -420,6 +445,7 @@ public final class RequestTemplate implements Serializable {
    *
    * @param uri to use, must be a relative uri.
    * @return a RequestTemplate for chaining.
+   * TODO: 给request设置uri
    */
   public RequestTemplate uri(String uri) {
     return this.uri(uri, false);
@@ -478,6 +504,7 @@ public final class RequestTemplate implements Serializable {
 
   /**
    * Set the target host for this request.
+   * 组装所有的部分，拼接成一个完整的URL
    *
    * @param target host for this request. Must be an absolute target.
    * @return a RequestTemplate for chaining.
@@ -562,7 +589,7 @@ public final class RequestTemplate implements Serializable {
 
   /**
    * List all of the template variable expressions for this template.
-   *
+   * TODO: 获取所有template的所有参数名称们，可就是key们
    * @return a list of template variable names
    */
   public List<String> variables() {
@@ -1055,6 +1082,7 @@ public final class RequestTemplate implements Serializable {
 
   /**
    * Factory for creating RequestTemplate.
+   * TODO: 创建一个RequestTemplate实例的工厂接口
    */
   interface Factory {
 

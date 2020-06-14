@@ -24,27 +24,34 @@ import java.util.regex.Pattern;
 import feign.Request.HttpMethod;
 
 /**
- * Defines what annotations and values are valid on interfaces.
+ * Defines what annotations and values are valid on interfaces. TODO: 它决定了哪些注解，可以标注在接口,
+ * 接口方法上是有效地，并且提取出来有效的信息，组装为MethodMetadata元信息。
  */
 public interface Contract {
 
   /**
-   * Called to parse the methods in the class that are linked to HTTP requests.
-   *
+   * Called to parse the methods in the class that are linked to HTTP requests. TODO: MethodMetadata
+   * 方法元信息，可以是returnType, 请求参数，url， 查询参数，请求体等等
+   * 
    * @param targetType {@link feign.Target#type() type} of the Feign interface.
    */
   List<MethodMetadata> parseAndValidateMetadata(Class<?> targetType);
 
+  /**
+   * 抽象基类
+   */
   abstract class BaseContract implements Contract {
 
     /**
      * @param targetType {@link feign.Target#type() type} of the Feign interface.
-     * @see #parseAndValidateMetadata(Class)
+     * @see #parseAndValidateMetadata(Class) TODO: 比较重要的方法，处理传进来的接口
      */
     @Override
     public List<MethodMetadata> parseAndValidateMetadata(Class<?> targetType) {
+      // TODO: 类上不能存在一个泛型变量
       checkState(targetType.getTypeParameters().length == 0, "Parameterized types unsupported: %s",
           targetType.getSimpleName());
+      // TODO: 接口最多只能有一个父接口
       checkState(targetType.getInterfaces().length <= 1, "Only single inheritance supported: %s",
           targetType.getSimpleName());
       if (targetType.getInterfaces().length == 1) {
@@ -53,17 +60,21 @@ public interface Contract {
             targetType.getSimpleName());
       }
       final Map<String, MethodMetadata> result = new LinkedHashMap<String, MethodMetadata>();
+      // TODO: 对该类所有的方法进行解析，包装成一个MethodMetadata，getMethods表示本类 + 父类的Public方法
       for (final Method method : targetType.getMethods()) {
+        // TODO: 排除static方法，Object中的方法，以及Default方法
         if (method.getDeclaringClass() == Object.class ||
             (method.getModifiers() & Modifier.STATIC) != 0 ||
             Util.isDefault(method)) {
           continue;
         }
+        // TODO: 方法到元数据的解析
         final MethodMetadata metadata = parseAndValidateMetadata(targetType, method);
         checkState(!result.containsKey(metadata.configKey()), "Overrides unsupported: %s",
             metadata.configKey());
         result.put(metadata.configKey(), metadata);
       }
+      // TODO: 返回一个快照版本
       return new ArrayList<>(result.values());
     }
 
@@ -82,39 +93,46 @@ public interface Contract {
       final MethodMetadata data = new MethodMetadata();
       data.targetType(targetType);
       data.method(method);
+      // TODO: 方法返回类型是支持泛型的
       data.returnType(Types.resolve(targetType, targetType, method.getGenericReturnType()));
+      // TODO: 使用了Feign的一个工具方法，来生成configKey, 尽量唯一
       data.configKey(Feign.configKey(targetType, method));
 
       if (targetType.getInterfaces().length == 1) {
+        // TODO: 处理接口上的注解，并且处理了父接口，所以父接口里的注解，子接口也会生效， 交给子类去处理
         processAnnotationOnClass(data, targetType.getInterfaces()[0]);
       }
       processAnnotationOnClass(data, targetType);
 
-
+      // TODO: 处理标注在方法上的所有的注解，若子接口override了父接口的方法，注解会以子接口的为主，然后忽略父接口方法
       for (final Annotation methodAnnotation : method.getAnnotations()) {
         processAnnotationOnMethod(data, methodAnnotation, method);
       }
       if (data.isIgnored()) {
         return data;
       }
+      // TODO: 处理完注解上的方法之后，理应知道了http调用方法, POST or GET, DELETE等等
       checkState(data.template().method() != null,
           "Method %s not annotated with HTTP method type (ex. GET, POST)%s",
           data.configKey(), data.warnings());
+      // TODO: 方法参数，支持泛型类型
       final Class<?>[] parameterTypes = method.getParameterTypes();
       final Type[] genericParameterTypes = method.getGenericParameterTypes();
-
+      // TODO: 注解是个二维数组
       final Annotation[][] parameterAnnotations = method.getParameterAnnotations();
       final int count = parameterAnnotations.length;
+      // TODO: 一个个的去处理
       for (int i = 0; i < count; i++) {
         boolean isHttpAnnotation = false;
         if (parameterAnnotations[i] != null) {
+          // TODO: 一样的交给子类去处理
           isHttpAnnotation = processAnnotationsOnParameter(data, parameterAnnotations[i], i);
         }
 
         if (isHttpAnnotation) {
           data.ignoreParamater(i);
         }
-
+        // TODO: 如果参数类型是URI类型的，那url就以它为准，并不使用全局的了
         if (parameterTypes[i] == URI.class) {
           data.urlIndex(i);
         } else if (!isHttpAnnotation && parameterTypes[i] != Request.Options.class) {
@@ -222,11 +240,16 @@ public interface Contract {
     }
   }
 
+
+  /**
+   * TODO: 内置的唯一实现类，也是Feign的默认实现
+   */
   class Default extends DeclarativeContract {
 
     static final Pattern REQUEST_LINE_PATTERN = Pattern.compile("^([A-Z]+)[ ]*(.*)$");
 
     public Default() {
+      // TODO: 类 支持注解@Headers
       super.registerClassAnnotation(Headers.class, (header, data) -> {
         final String[] headersOnType = header.value();
         checkState(headersOnType.length > 0, "Headers annotation was empty on type %s.",
@@ -236,6 +259,7 @@ public interface Contract {
         data.template().headers(null); // to clear
         data.template().headers(headers);
       });
+      // TODO: 方法支持注解: @RequestLine @Body @Headers
       super.registerMethodAnnotation(RequestLine.class, (ann, data) -> {
         final String requestLine = ann.value();
         checkState(emptyToNull(requestLine) != null,
@@ -270,6 +294,7 @@ public interface Contract {
             data.configKey());
         data.template().headers(toMap(headersOnMethod));
       });
+      // TODO: 参数支持注解，@Param, @QueryMap, @HeaderMap等
       super.registerParameterAnnotation(Param.class, (paramAnnotation, data, paramIndex) -> {
         final String name = paramAnnotation.value();
         checkState(emptyToNull(name) != null, "Param annotation was empty on param %s.",

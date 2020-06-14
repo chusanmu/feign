@@ -17,7 +17,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Cloned for each invocation to {@link Client#execute(Request, feign.Request.Options)}.
- * Implementations may keep state to determine if retry operations should continue or not.
+ * Implementations may keep state to determine if retry operations should continue or not. TODO: 重试器
  */
 public interface Retryer extends Cloneable {
 
@@ -28,11 +28,27 @@ public interface Retryer extends Cloneable {
 
   Retryer clone();
 
+  /**
+   * 默认的重试器
+   */
   class Default implements Retryer {
 
+    /* ---------------- 重试参数 -------------- */
+
+    /**
+     * 最多重试5次
+     */
     private final int maxAttempts;
+    /**
+     * 默认100ms重试一次
+     */
     private final long period;
+    /**
+     * 最大重试一秒钟
+     */
     private final long maxPeriod;
+
+    /* ---------------- 内部统计指标 计数 -------------- */
     int attempt;
     long sleptForMillis;
 
@@ -53,6 +69,7 @@ public interface Retryer extends Cloneable {
     }
 
     public void continueOrPropagate(RetryableException e) {
+      // TODO: 超过了最大重试次数，直接刨出异常
       if (attempt++ >= maxAttempts) {
         throw e;
       }
@@ -97,7 +114,8 @@ public interface Retryer extends Cloneable {
   }
 
   /**
-   * Implementation that never retries request. It propagates the RetryableException.
+   * Implementation that never retries request. It propagates the RetryableException. TODO:
+   * 永不重试器，生产环境建议 永不重试
    */
   Retryer NEVER_RETRY = new Retryer() {
 

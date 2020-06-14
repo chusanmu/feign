@@ -62,7 +62,7 @@ public abstract class Feign {
    * </pre>
    *
    * Note that there is no whitespace expected in a key!
-   *
+   * 工具方法，生成configKey
    * @param targetType {@link feign.Target#type() type} of the Feign interface.
    * @param method invoked method, present on {@code type} or its super.
    * @see MethodMetadata#configKey()
@@ -92,27 +92,41 @@ public abstract class Feign {
   /**
    * Returns a new instance of an HTTP API, defined by annotations in the {@link Feign Contract},
    * for the specified {@code target}. You should cache this result.
+   * TODO:  唯一的Public的抽象方法，用于为目标target创建一个代理对象实例
    */
   public abstract <T> T newInstance(Target<T> target);
 
   public static class Builder {
-
+    /**
+     * TODO: 请求模板的拦截器，默认的空的，没有
+     */
     private final List<RequestInterceptor> requestInterceptors =
         new ArrayList<RequestInterceptor>();
+    // TODO: 日志级别
     private Logger.Level logLevel = Logger.Level.NONE;
+    // TODO: 默认使用的提取器，默认支持@RequestLine原生注解的这种
     private Contract contract = new Contract.Default();
+    // TODO: 默认使用HttpURLConnection发送请求
     private Client client = new Client.Default(null, null);
+    // TODO: 默认情况下feign开启了重试机制，100ms重试一次，一共重试5次，最长持续1s钟
     private Retryer retryer = new Retryer.Default();
     private Logger logger = new NoOpLogger();
+    // TODO: 默认的编码器，默认只支持String类型的编码
     private Encoder encoder = new Encoder.Default();
+    // TODO: 默认的解码器，默认只能解码String类型和字节数组类型
     private Decoder decoder = new Decoder.Default();
+    // TODO: 支持把@QueryMap标注在Map or bean上面
     private QueryMapEncoder queryMapEncoder = new FieldQueryMapEncoder();
+    // TODO: 把错误码包装为FeignException异常向上抛出
     private ErrorDecoder errorDecoder = new ErrorDecoder.Default();
     private Options options = new Options();
+    // TODO: FeignInvocationHandler是它的唯一实现
     private InvocationHandlerFactory invocationHandlerFactory =
         new InvocationHandlerFactory.Default();
+    // TODO: 默认不会解码404
     private boolean decode404;
     private boolean closeAfterDecode = true;
+    // TODO: 异常传播策略，NONE代表不包装，不处理，直接抛出
     private ExceptionPropagationPolicy propagationPolicy = NONE;
     private boolean forceDecoding = false;
     private List<Capability> capabilities = new ArrayList<>();
@@ -304,6 +318,14 @@ public abstract class Feign {
       this.delegate = decoder;
     }
 
+    /**
+     * TODO: 实际解码动作交给delegate完成，在执行decode动作之前，执行一次responseMapper # map映射动作
+     * @param response the response to decode
+     * @param type {@link java.lang.reflect.Method#getGenericReturnType() generic return type} of the
+     *        method corresponding to this {@code response}.
+     * @return
+     * @throws IOException
+     */
     @Override
     public Object decode(Response response, Type type) throws IOException {
       return delegate.decode(mapper.map(response, type), type);

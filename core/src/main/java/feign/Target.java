@@ -23,19 +23,37 @@ import static feign.Util.emptyToNull;
  * <br>
  * Similar to {@code
  * javax.ws.rs.client.WebTarget}, as it produces requests. However, {@link RequestTemplate} is a
- * closer match to {@code WebTarget}.
+ * closer match to {@code WebTarget}. TODO: 用于把RequestTemplate 转为 请求实例Request, 之后利用Client发送出去 泛型接口
  *
  * @param <T> type of the interface this target applies to.
  */
 public interface Target<T> {
 
   /* The type of the interface this target applies to. ex. {@code Route53}. */
+
+  /**
+   * 此target作用的接口类型
+   * 
+   * @return
+   */
   Class<T> type();
 
   /* configuration key associated with this target. For example, {@code route53}. */
+
+  /**
+   * 此target配置的一个Key
+   * 
+   * @return
+   */
   String name();
 
   /* base HTTP URL of the target. For example, {@code https://api/v2}. */
+
+  /**
+   * 发送请求的url
+   * 
+   * @return
+   */
   String url();
 
   /**
@@ -59,10 +77,15 @@ public interface Target<T> {
    * <br>
    * This call is similar to {@code
    * javax.ws.rs.client.WebTarget.request()}, except that we expect transient, but necessary
-   * decoration to be applied on invocation.
+   * decoration to be applied on invocation. TODO: 重要方法，用于把请求组装，之后转为Request
    */
   public Request apply(RequestTemplate input);
 
+  /**
+   * 实现，内聚啊，硬编码目标类，三大属性均不能为空
+   * 
+   * @param <T>
+   */
   public static class HardCodedTarget<T> implements Target<T> {
 
     private final Class<T> type;
@@ -72,6 +95,7 @@ public interface Target<T> {
     public HardCodedTarget(Class<T> type, String url) {
       this(type, url, url);
     }
+
 
     public HardCodedTarget(Class<T> type, String name, String url) {
       this.type = checkNotNull(type, "type");
@@ -97,9 +121,11 @@ public interface Target<T> {
     /* no authentication or other special activity. just insert the url. */
     @Override
     public Request apply(RequestTemplate input) {
+      // TODO: 如果开头有http，说明是个绝对路径，则不管了
       if (input.url().indexOf("http") != 0) {
         input.target(url());
       }
+      // TODO: 否则填充路径
       return input.request();
     }
 
@@ -163,11 +189,13 @@ public interface Target<T> {
 
     @Override
     public String url() {
+      // TODO: 啥都不做，所以不需要url
       throw new UnsupportedOperationException("Empty targets don't have URLs");
     }
 
     @Override
     public Request apply(RequestTemplate input) {
+      // TODO: 有 http 路径则抛错
       if (input.url().indexOf("http") != 0) {
         throw new UnsupportedOperationException(
             "Request with non-absolute URL not supported with empty target");

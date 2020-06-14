@@ -23,6 +23,7 @@ import static feign.Util.*;
 
 /**
  * Simple logging abstraction for debug messages. Adapted from {@code retrofit.RestAdapter.Log}.
+ * TODO: feign抽象出来的日志记录器
  */
 public abstract class Logger {
 
@@ -33,14 +34,22 @@ public abstract class Logger {
 
   /**
    * Override to log requests and responses using your own implementation. Messages will be http
-   * request and response text.
+   * request and response text. 三大参数，你决定往哪儿写 控制台 or 文件
    *
    * @param configKey value of {@link Feign#configKey(Class, java.lang.reflect.Method)}
    * @param format {@link java.util.Formatter format string}
    * @param args arguments applied to {@code format}
+   *
    */
   protected abstract void log(String configKey, String format, Object... args);
 
+  /**
+   * TODO: 记录请求信息
+   * 
+   * @param configKey
+   * @param logLevel
+   * @param request
+   */
   protected void logRequest(String configKey, Level logLevel, Request request) {
     log(configKey, "---> %s %s HTTP/1.1", request.httpMethod().name(), request.url());
     if (logLevel.ordinal() >= Level.HEADERS.ordinal()) {

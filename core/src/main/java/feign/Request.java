@@ -25,6 +25,7 @@ import static feign.Util.checkNotNull;
 import static feign.Util.valuesOrEmpty;
 
 /**
+ * TODO:HTTP请求实体啊
  * An immutable request to an http server.
  */
 public final class Request {
@@ -34,7 +35,7 @@ public final class Request {
   }
 
   /**
-   * No parameters can be null except {@code body} and {@code charset}. All parameters must be
+   * No parameters can be null except {@code body} and {@code charset }. All parameters must be
    * effectively immutable, via safe copies, not mutating or otherwise.
    *
    * @deprecated {@link #create(HttpMethod, String, Map, byte[], Charset)}
@@ -104,6 +105,8 @@ public final class Request {
                                RequestTemplate requestTemplate) {
     return new Request(httpMethod, url, headers, body, requestTemplate);
   }
+
+  /* ---------------- 下面这些参数，对应HTTP请求的各个部分 -------------- */
 
   private final HttpMethod httpMethod;
   private final String url;
@@ -368,6 +371,7 @@ public final class Request {
   }
 
   /**
+   * TODO: HTTP的请求体，也是Request的一个内部类
    * Request Body
    * <p>
    * Considered experimental, will most likely be made internal going forward.
@@ -377,6 +381,9 @@ public final class Request {
   public static class Body {
 
     private Charset encoding;
+    /**
+     * 字节数组可以表示任意类型，最为通用
+     */
     private byte[] data;
 
     private Body() {
@@ -401,6 +408,10 @@ public final class Request {
       return data != null ? data.length : 0;
     }
 
+    /**
+     * 获取body的二进制表示形式
+     * @return
+     */
     public byte[] asBytes() {
       return data;
     }

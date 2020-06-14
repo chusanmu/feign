@@ -43,6 +43,7 @@ import static feign.Util.ensureClosed;
  *   Stream<Contributor> contributors(@Param("owner") String owner, @Param("repo") String repo);
  * }</code>
  * </pre>
+ * TODO: 支持返回值是java.util.stream.Stream类型
  */
 public final class StreamDecoder implements Decoder {
 

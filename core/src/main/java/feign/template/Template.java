@@ -81,7 +81,7 @@ public class Template {
   }
 
   /**
-   * Expand the template.
+   * Expand the template. 填充参数 表达式可以是个feign.template.Expression对象 一个{} 就是一个Expression对象
    *
    * @param variables containing the values for expansion.
    * @return a fully qualified URI with the variables expanded.
@@ -157,7 +157,7 @@ public class Template {
   /**
    * Variable names contained in the template.
    *
-   * @return a List of Variable Names.
+   * @return a List of Variable Names. TODO: 拿到这个template 下的variables
    */
   public List<String> getVariables() {
     return this.templateChunks.stream()

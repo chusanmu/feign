@@ -42,7 +42,8 @@ import javax.net.ssl.SSLSocketFactory;
 import feign.Request.Options;
 
 /**
- * Submits HTTP {@link Request requests}. Implementations are expected to be thread-safe.
+ * Submits HTTP {@link Request requests}. Implementations are expected to be thread-safe. TODO:
+ * 用来发送请求，Client, Feign设计的很有特点，默认高内聚，实现类 在接口中
  */
 public interface Client {
 
@@ -56,6 +57,9 @@ public interface Client {
    */
   Response execute(Request request, Options options) throws IOException;
 
+  /**
+   * TODO: 默认使用JDK的HttpURLConnection 来发送请求， JDK默认的HttpURLConnection 会把GET请求转为POST请求，需要注意
+   */
   class Default implements Client {
 
     private final SSLSocketFactory sslContextFactory;
@@ -100,7 +104,9 @@ public interface Client {
 
     @Override
     public Response execute(Request request, Options options) throws IOException {
+      // TODO: 通过Request 构建一个HttpURLConnection
       HttpURLConnection connection = convertAndSend(request, options);
+      // TODO: 得到response 之后进行解析
       return convertResponse(connection, request);
     }
 

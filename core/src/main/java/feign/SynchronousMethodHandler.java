@@ -27,22 +27,60 @@ import static feign.ExceptionPropagationPolicy.UNWRAP;
 import static feign.FeignException.errorExecuting;
 import static feign.Util.checkNotNull;
 
+/**
+ * TODO：重要，同步方法调用处理器
+ * 1. 通过方法参数，使用工厂构建出一个RequestTemplate请求模板， 这里会解析出@RequestLine, @Param注解
+ * 2. 从方法参数里拿到请求选项 Options
+ * 3. executeAndDecode(template, options) 执行发送Http请求，并且完成结果解码 这个步骤比较复杂
+ *    1.把请求模板转换为请求对象 feign.Request
+ *       1. 执行所有的拦截器RequestInterceptor，完成对请求模板的定制
+ *       2. 调用目标target, 把请求模板转为Request, target.apply(template);
+ *    2. 发送http请求，client.execute(request, options), 得到一个response对象。
+ *    3. 解析此response对象，解析后return, 返回object ,可能是response实例，也可能是decode解码后的任意类型
+ * 4. 发送Http请求若没有错误，那就结束了，否则进行重试
+ */
 final class SynchronousMethodHandler implements MethodHandler {
 
   private static final long MAX_RESPONSE_BUFFER_SIZE = 8192L;
-
+  /**
+   * 方法元信息
+   */
   private final MethodMetadata metadata;
+  /**
+   * 目标，也就是最终真正构建HTTP请求Request的实例 一般为HardCodedTarget
+   */
   private final Target<?> target;
+  /**
+   * 负责最终请求的发送， 默认传进来的是JDK的，效率比较低
+   */
   private final Client client;
+  /**
+   * 负责重试，默认传进来的是Default, 有重试机制
+   */
   private final Retryer retryer;
+  /**
+   * TODO: 请求拦截器，它会在target.apply(template); 也就是模板 -> 请求的转换之前完成拦截
+   */
   private final List<RequestInterceptor> requestInterceptors;
+  /**
+   * 打印日志
+   */
   private final Logger logger;
   private final Logger.Level logLevel;
+  /**
+   * 构建请求模板的工厂，对于请求模板，有多种构建方式，内部会用到可能多个编码器
+   */
   private final RequestTemplate.Factory buildTemplateFromArgs;
+  /**
+   * 请求参数，比如连接超时时间，请求超时时间等
+   */
   private final Options options;
   private final ExceptionPropagationPolicy propagationPolicy;
 
   // only one of decoder and asyncResponseHandler will be non-null
+  /**
+   * 解码器，对response进行解码
+   */
   private final Decoder decoder;
   private final AsyncResponseHandler asyncResponseHandler;
 
@@ -81,14 +119,19 @@ final class SynchronousMethodHandler implements MethodHandler {
 
   @Override
   public Object invoke(Object[] argv) throws Throwable {
+    // TODO: 根据方法入参，结合工厂构建出一个请求模板
     RequestTemplate template = buildTemplateFromArgs.create(argv);
+    // TODO: findOptions():如果方法入参里含有Options类型，这里会被找出来, 如果有多个，只会有一个生效
     Options options = findOptions(argv);
+    // TODO: 重试机制，这里克隆了一份
     Retryer retryer = this.retryer.clone();
     while (true) {
       try {
+        // TODO: 执行并解码
         return executeAndDecode(template, options);
       } catch (RetryableException e) {
         try {
+          // TODO: 若抛出异常，那就触发重试逻辑，该逻辑是：如果不重试，该异常会继续抛出
           retryer.continueOrPropagate(e);
         } catch (RetryableException th) {
           Throwable cause = th.getCause();
@@ -101,6 +144,7 @@ final class SynchronousMethodHandler implements MethodHandler {
         if (logLevel != Logger.Level.NONE) {
           logger.logRetry(metadata.configKey(), logLevel);
         }
+        // TODO: 如果重试 进行continue
         continue;
       }
     }
@@ -116,6 +160,7 @@ final class SynchronousMethodHandler implements MethodHandler {
     Response response;
     long start = System.nanoTime();
     try {
+      // TODO: client拿着request去执行
       response = client.execute(request, options);
       // ensure the request is set. TODO: remove in Feign 12
       response = response.toBuilder()
@@ -132,6 +177,7 @@ final class SynchronousMethodHandler implements MethodHandler {
 
 
     if (decoder != null)
+      // TODO: 解码喽
       return decoder.decode(response, metadata.returnType());
 
     CompletableFuture<Object> resultFuture = new CompletableFuture<>();
@@ -157,6 +203,7 @@ final class SynchronousMethodHandler implements MethodHandler {
   }
 
   Request targetRequest(RequestTemplate template) {
+    // TODO: 执行requestInterceptor中的apply方法
     for (RequestInterceptor interceptor : requestInterceptors) {
       interceptor.apply(template);
     }

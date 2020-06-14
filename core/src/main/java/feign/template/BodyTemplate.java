@@ -19,10 +19,13 @@ import java.util.Map;
 
 /**
  * Template for @{@link feign.Body} annotated Templates. Unresolved expressions are preserved as
- * literals and literals are not URI encoded.
+ * literals and literals are not URI encoded. TODO: 用于标注，@Body注解的模板
  */
 public final class BodyTemplate extends Template {
 
+  /**
+   * TODO: 虽然不强制，但是也进行了特殊支持
+   */
   private static final String JSON_TOKEN_START = "{";
   private static final String JSON_TOKEN_END = "}";
   private static final String JSON_TOKEN_START_ENCODED = "%7B";
@@ -52,6 +55,7 @@ public final class BodyTemplate extends Template {
 
   private BodyTemplate(String value, Charset charset) {
     super(value, ExpansionOptions.ALLOW_UNRESOLVED, EncodingOptions.NOT_REQUIRED, false, charset);
+    // TODO: 判断是不是json啊
     if (value.startsWith(JSON_TOKEN_START_ENCODED) && value.endsWith(JSON_TOKEN_END_ENCODED)) {
       this.json = true;
     }
@@ -60,6 +64,7 @@ public final class BodyTemplate extends Template {
   @Override
   public String expand(Map<String, ?> variables) {
     String expanded = super.expand(variables);
+    // TODO: 如果是Json 进行特殊处理
     if (this.json) {
       /* restore all start and end tokens */
       expanded = expanded.replaceAll(JSON_TOKEN_START_ENCODED, JSON_TOKEN_START);

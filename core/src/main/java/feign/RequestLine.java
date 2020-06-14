@@ -29,10 +29,16 @@ public @interface RequestLine {
 
   /**
    * 请求方法 + uri
+   * 
    * @return
    */
   String value();
 
+  /**
+   * 是否进行转义，默认是转义的，比如参数值里面有 ? / 等，都会被转义为 转义字符.
+   * 
+   * @return
+   */
   boolean decodeSlash() default true;
 
   CollectionFormat collectionFormat() default CollectionFormat.EXPLODED;
