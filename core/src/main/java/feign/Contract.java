@@ -43,6 +43,7 @@ public interface Contract {
   abstract class BaseContract implements Contract {
 
     /**
+     * TODO: 根据接口返回 接口中对应的methodMetadata，接口中存在多个method, 当然就存在多个methodMeatadata
      * @param targetType {@link feign.Target#type() type} of the Feign interface.
      * @see #parseAndValidateMetadata(Class) TODO: 比较重要的方法，处理传进来的接口
      */
@@ -55,12 +56,13 @@ public interface Contract {
       checkState(targetType.getInterfaces().length <= 1, "Only single inheritance supported: %s",
           targetType.getSimpleName());
       if (targetType.getInterfaces().length == 1) {
+        // TODO: 判断此接口的父接口的父接口的个数是不是0，不是0则抛出异常
         checkState(targetType.getInterfaces()[0].getInterfaces().length == 0,
             "Only single-level inheritance supported: %s",
             targetType.getSimpleName());
       }
       final Map<String, MethodMetadata> result = new LinkedHashMap<String, MethodMetadata>();
-      // TODO: 对该类所有的方法进行解析，包装成一个MethodMetadata，getMethods表示本类 + 父类的Public方法
+      // TODO: 对该类所有的方法进行解析，包装成一个MethodMetadata，getMethods表示本类 + 父类的Public方法，意思是把父接口的方法也拿到
       for (final Method method : targetType.getMethods()) {
         // TODO: 排除static方法，Object中的方法，以及Default方法
         if (method.getDeclaringClass() == Object.class ||
@@ -68,10 +70,12 @@ public interface Contract {
             Util.isDefault(method)) {
           continue;
         }
-        // TODO: 方法到元数据的解析
+        // TODO: 方法到元数据的解析，解析每个合法的方法
         final MethodMetadata metadata = parseAndValidateMetadata(targetType, method);
+        // TODO: 看看result中是否已经存在了，不存在加到缓存里面去
         checkState(!result.containsKey(metadata.configKey()), "Overrides unsupported: %s",
             metadata.configKey());
+        // TODO: 最后加到缓存里面
         result.put(metadata.configKey(), metadata);
       }
       // TODO: 返回一个快照版本
@@ -87,11 +91,15 @@ public interface Contract {
     }
 
     /**
+     * TODO: 解析接口中的合法的方法
      * Called indirectly by {@link #parseAndValidateMetadata(Class)}.
      */
     protected MethodMetadata parseAndValidateMetadata(Class<?> targetType, Method method) {
+      // TODO: 直接创建了一个MethodMeatadata
       final MethodMetadata data = new MethodMetadata();
+      // TODO: 把targetType，也就是接口类型设置进去
       data.targetType(targetType);
+      // TODO: 把method设置进去
       data.method(method);
       // TODO: 方法返回类型是支持泛型的
       data.returnType(Types.resolve(targetType, targetType, method.getGenericReturnType()));
@@ -100,18 +108,22 @@ public interface Contract {
 
       if (targetType.getInterfaces().length == 1) {
         // TODO: 处理接口上的注解，并且处理了父接口，所以父接口里的注解，子接口也会生效， 交给子类去处理
+        // TODO: 这里处理了父接口上的注解
         processAnnotationOnClass(data, targetType.getInterfaces()[0]);
       }
+      // TODO: 处理本接口上面的注解
       processAnnotationOnClass(data, targetType);
 
       // TODO: 处理标注在方法上的所有的注解，若子接口override了父接口的方法，注解会以子接口的为主，然后忽略父接口方法
       for (final Annotation methodAnnotation : method.getAnnotations()) {
+        // TODO: 接着调用处理方法上的注解，也是个抽象方法
         processAnnotationOnMethod(data, methodAnnotation, method);
       }
       if (data.isIgnored()) {
         return data;
       }
       // TODO: 处理完注解上的方法之后，理应知道了http调用方法, POST or GET, DELETE等等
+      // TODO: 如果还不知道 方法以GET调用还是POST调用，好吧，抛出异常
       checkState(data.template().method() != null,
           "Method %s not annotated with HTTP method type (ex. GET, POST)%s",
           data.configKey(), data.warnings());
@@ -132,7 +144,7 @@ public interface Contract {
         if (isHttpAnnotation) {
           data.ignoreParamater(i);
         }
-        // TODO: 如果参数类型是URI类型的，那url就以它为准，并不使用全局的了
+        // TODO: 如果参数类型是URI类型的，那url就以它为准，并不使用全局的了，也就是说参数以你传进来的为准了
         if (parameterTypes[i] == URI.class) {
           data.urlIndex(i);
         } else if (!isHttpAnnotation && parameterTypes[i] != Request.Options.class) {
@@ -140,27 +152,33 @@ public interface Contract {
             checkState(data.formParams().isEmpty() || data.bodyIndex() == null,
                 "Body parameters cannot be used with form parameters.%s", data.warnings());
           } else {
+            // TODO: 一般会走到这里
             checkState(data.formParams().isEmpty(),
                 "Body parameters cannot be used with form parameters.%s", data.warnings());
             checkState(data.bodyIndex() == null,
                 "Method has too many Body parameters: %s%s", method, data.warnings());
+            // TODO: 参数角标，参数类型
             data.bodyIndex(i);
             data.bodyType(Types.resolve(targetType, targetType, genericParameterTypes[i]));
           }
         }
       }
 
+      /* ---------------- 如果你在参数上查找注解 ，找到了 @HeaderMap 或者 @QueryMap， 则会进行检查参数类型 -------------- */
+
       if (data.headerMapIndex() != null) {
+        // TODO: 去检查对应的参数类型是否是Map，并且key是否是String类型的，如果不是，ok，则抛出异常
         checkMapString("HeaderMap", parameterTypes[data.headerMapIndex()],
             genericParameterTypes[data.headerMapIndex()]);
       }
 
       if (data.queryMapIndex() != null) {
+        // TODO: 这里和上面不同的是，去检查入参是否是Map类型，如果是Map类型，则去检查Map的key，否则啥事都不做，而上面的，如果不是Map会抛错的
         if (Map.class.isAssignableFrom(parameterTypes[data.queryMapIndex()])) {
           checkMapKeys("QueryMap", genericParameterTypes[data.queryMapIndex()]);
         }
       }
-
+      // TODO: 最后把data返回
       return data;
     }
 
@@ -199,6 +217,9 @@ public interface Contract {
       }
     }
 
+
+    /* ---------------- 三个抽象方法，处理类，处理方法，处理入参，留给子类去实现 -------------- */
+
     /**
      * Called by parseAndValidateMetadata twice, first on the declaring class, then on the target
      * type (unless they are the same).
@@ -233,6 +254,7 @@ public interface Contract {
      * links a parameter name to its index in the method signature.
      */
     protected void nameParam(MethodMetadata data, String name, int i) {
+      // TODO:
       final Collection<String> names =
           data.indexToName().containsKey(i) ? data.indexToName().get(i) : new ArrayList<String>();
       names.add(name);
@@ -242,64 +264,95 @@ public interface Contract {
 
 
   /**
-   * TODO: 内置的唯一实现类，也是Feign的默认实现
+   * TODO: 内置的唯一实现类，也是Feign的默认实现，专门用于处理注解
    */
   class Default extends DeclarativeContract {
 
     static final Pattern REQUEST_LINE_PATTERN = Pattern.compile("^([A-Z]+)[ ]*(.*)$");
 
+    /**
+     * TODO: 它主要做的就是，向父类注册 注解处理器(解析器)
+     */
     public Default() {
-      // TODO: 类 支持注解@Headers
+      // TODO: 类 支持注解@Headers，默认只注册了一个Headers注解, 默认类上只支持Headers注解，解析器，就是后面的Lambada
       super.registerClassAnnotation(Headers.class, (header, data) -> {
+        // TODO: 把它的value取出来
         final String[] headersOnType = header.value();
+        // TODO: 检查 headersOnType 是否有值
         checkState(headersOnType.length > 0, "Headers annotation was empty on type %s.",
             data.configKey());
+        // TODO: 把Headers里面的值取出来，转换为Map
         final Map<String, Collection<String>> headers = toMap(headersOnType);
+        // TODO: 把 原有的 data.template().headers 放进 headers 中
         headers.putAll(data.template().headers());
+        // TODO: 然后把原有的清空，重新加进去
         data.template().headers(null); // to clear
+        // TODO: 这样headers就设置好了
         data.template().headers(headers);
       });
       // TODO: 方法支持注解: @RequestLine @Body @Headers
+      // TODO: 首先注册的支持 @RequestLine
       super.registerMethodAnnotation(RequestLine.class, (ann, data) -> {
+        // TODO: 把 requestLine中的value取出来
         final String requestLine = ann.value();
+        // TODO: 看看是不是为空，为空就抛出异常
         checkState(emptyToNull(requestLine) != null,
             "RequestLine annotation was empty on method %s.", data.configKey());
 
+        // TODO: 这里用了正则表达式去校验，你requestLine中写的value 必须要满足这个正则的条件，例如 @RequestLine("GET /user/id") 这样是符合条件的
         final Matcher requestLineMatcher = REQUEST_LINE_PATTERN.matcher(requestLine);
+        // TODO: 如果没找到，你写的value不符合条件，则抛出异常
         if (!requestLineMatcher.find()) {
           throw new IllegalStateException(String.format(
               "RequestLine annotation didn't start with an HTTP verb on method %s",
               data.configKey()));
         } else {
+          // TODO: 然后把找到的信息加进去，第1个是 请求方式 例如 GET
           data.template().method(HttpMethod.valueOf(requestLineMatcher.group(1)));
+          // TODO: 然后第二个是 uri, 例如 /user/id
           data.template().uri(requestLineMatcher.group(2));
         }
+        // TODO: 是否进行转义，默认是转义的
         data.template().decodeSlash(ann.decodeSlash());
+        // TODO: 设置 转义格式化器
         data.template()
             .collectionFormat(ann.collectionFormat());
       });
+      // TODO: 注册 Body注解，方法上同时也支持Body注解
       super.registerMethodAnnotation(Body.class, (ann, data) -> {
+        // TODO: 把body注解里面的value拿到
         final String body = ann.value();
+        // TODO: 校验，检查是否为空
         checkState(emptyToNull(body) != null, "Body annotation was empty on method %s.",
             data.configKey());
+        // TODO: 如果第一个就是{ 直接设置body 否则设置bodyTemplate
         if (body.indexOf('{') == -1) {
           data.template().body(body);
         } else {
+          // TODO: 否则作为一个body模板放进去
           data.template().bodyTemplate(body);
         }
       });
+      // TODO: 注册headers注解
       super.registerMethodAnnotation(Headers.class, (header, data) -> {
+        // TODO: 把header注解里面的value取出来，可能会有多个
         final String[] headersOnMethod = header.value();
+        // TODO: 为空 就抛出异常
         checkState(headersOnMethod.length > 0, "Headers annotation was empty on method %s.",
             data.configKey());
+        // TODO: value 转换为map，然后 加到headers中
         data.template().headers(toMap(headersOnMethod));
       });
       // TODO: 参数支持注解，@Param, @QueryMap, @HeaderMap等
+      // TODO: 注册 Param注解
       super.registerParameterAnnotation(Param.class, (paramAnnotation, data, paramIndex) -> {
+        // TODO: 一样把注解里面的value取出来
         final String name = paramAnnotation.value();
         checkState(emptyToNull(name) != null, "Param annotation was empty on param %s.",
             paramIndex);
+        // TODO: 把param name的值存到data中
         nameParam(data, name, paramIndex);
+        // TODO: 把Expander 如何填充参数拿到，默认toString去填充
         final Class<? extends Param.Expander> expander = paramAnnotation.expander();
         if (expander != Param.ToStringExpander.class) {
           data.indexToExpanderClass().put(paramIndex, expander);
@@ -308,19 +361,34 @@ public interface Contract {
           data.formParams().add(name);
         }
       });
+      // TODO: 注册QueryMap注解
       super.registerParameterAnnotation(QueryMap.class, (queryMap, data, paramIndex) -> {
+        // TODO: 如果queryMap已经存在了，ok那就抛出错误
         checkState(data.queryMapIndex() == null,
             "QueryMap annotation was present on multiple parameters.");
+        // TODO: 设置mapIndex
         data.queryMapIndex(paramIndex);
+        // TODO: 是否编码
         data.queryMapEncoded(queryMap.encoded());
       });
+      // TODO: 注册headerMap
       super.registerParameterAnnotation(HeaderMap.class, (queryMap, data, paramIndex) -> {
+        // TODO: 如果不等于空，那就抛出错吧
         checkState(data.headerMapIndex() == null,
             "HeaderMap annotation was present on multiple parameters.");
+        // TODO: 就只设置了HeadMap角标
         data.headerMapIndex(paramIndex);
       });
     }
 
+    /**
+     * TODO: 把输入，转为Map结构
+     * 例如
+     * @Header({"accept: cn","accept:en"})
+     * 会转为 Map --》 ("accept": [cn,en])
+     * @param input
+     * @return
+     */
     private static Map<String, Collection<String>> toMap(String[] input) {
       final Map<String, Collection<String>> result =
           new LinkedHashMap<String, Collection<String>>(input.length);

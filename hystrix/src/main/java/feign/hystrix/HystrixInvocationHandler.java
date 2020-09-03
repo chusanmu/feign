@@ -33,6 +33,9 @@ import rx.Observable;
 import rx.Single;
 import static feign.Util.checkNotNull;
 
+/**
+ * TODO: 当使用hystrix的时候，invocationHandler就是使用此invocationHandler
+ */
 final class HystrixInvocationHandler implements InvocationHandler {
 
   private final Target<?> target;
@@ -103,9 +106,16 @@ final class HystrixInvocationHandler implements InvocationHandler {
 
     HystrixCommand<Object> hystrixCommand =
         new HystrixCommand<Object>(setterMethodMap.get(method)) {
+
+          /**
+           * TODO: 真正的去执行请求
+           * @return
+           * @throws Exception
+           */
           @Override
           protected Object run() throws Exception {
             try {
+              // TODO: 会去执行 SynchronousMethodHandler, 如果中间执行失败，会被catch住，之后抛出
               return HystrixInvocationHandler.this.dispatch.get(method).invoke(args);
             } catch (Exception e) {
               throw e;
@@ -114,16 +124,25 @@ final class HystrixInvocationHandler implements InvocationHandler {
             }
           }
 
+          /**
+           * TODO: 获取失败回调
+           * @return
+           */
           @Override
           protected Object getFallback() {
+            // TODO: 如果fallbackFactory == null, 那就调用父类的getFallback吧
             if (fallbackFactory == null) {
               return super.getFallback();
             }
             try {
+              // TODO: getExecutionException 把 runnable线程 抛出的异常拿到手，根据这个异常 fallbackFactory 去生成 fallback
               Object fallback = fallbackFactory.create(getExecutionException());
+              // TODO: 去执行这个fallback中的这个降级方法
               Object result = fallbackMethodMap.get(method).invoke(fallback, args);
               if (isReturnsHystrixCommand(method)) {
+                // TODO: 如果返回的又是一个HystrixCommand，那就接着去执行它
                 return ((HystrixCommand) result).execute();
+                // TODO: Observable 判断是否是一个 Observable，如果是去执行它
               } else if (isReturnsObservable(method)) {
                 // Create a cold Observable
                 return ((Observable) result).toBlocking().first();
@@ -133,11 +152,14 @@ final class HystrixInvocationHandler implements InvocationHandler {
               } else if (isReturnsCompletable(method)) {
                 ((Completable) result).await();
                 return null;
+                // TODO: 如果返回的是一个CompletableFuture，则强转成Future, 然后调它的get方法
               } else if (isReturnsCompletableFuture(method)) {
                 return ((Future) result).get();
               } else {
+                // TODO: 其他情况就把result返回就好了
                 return result;
               }
+              // TODO: 如果过程中 产生了异常，则统一包成error返回
             } catch (IllegalAccessException e) {
               // shouldn't happen as method is public due to being an interface
               throw new AssertionError(e);
@@ -152,8 +174,10 @@ final class HystrixInvocationHandler implements InvocationHandler {
           }
         };
 
+    // TODO: 不同的情况走不同的分支，如果是个default方法，直接执行
     if (Util.isDefault(method)) {
       return hystrixCommand.execute();
+      // TODO: 如果方法返回值是HystrixCommand,那就把它返回
     } else if (isReturnsHystrixCommand(method)) {
       return hystrixCommand;
     } else if (isReturnsObservable(method)) {
@@ -165,6 +189,7 @@ final class HystrixInvocationHandler implements InvocationHandler {
     } else if (isReturnsCompletable(method)) {
       return hystrixCommand.toObservable().toCompletable();
     } else if (isReturnsCompletableFuture(method)) {
+      // TODO: 包一层CompletableFuture
       return new ObservableCompletableFuture<>(hystrixCommand);
     }
     return hystrixCommand.execute();

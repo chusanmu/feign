@@ -37,11 +37,16 @@ import static feign.ExceptionPropagationPolicy.NONE;
  */
 public abstract class Feign {
 
+  /**
+   *  Builder 模式
+   * @return
+   */
   public static Builder builder() {
     return new Builder();
   }
 
   /**
+   * TODO: 根据接口类型，和method来生成一个key
    * Configuration keys are formatted as unresolved <a href=
    * "http://docs.oracle.com/javase/6/docs/jdk/api/javadoc/doclet/com/sun/javadoc/SeeTag.html" >see
    * tags</a>. This method exposes that format, in case you need to create the same value as
@@ -50,6 +55,9 @@ public abstract class Feign {
    * <p>
    * Here are some sample encodings:
    *
+   *
+   *
+   * TODO: 这地方文档有错误
    * <pre>
    * <ul>
    *   <li>{@code Route53}: would match a class {@code route53.Route53}</li>

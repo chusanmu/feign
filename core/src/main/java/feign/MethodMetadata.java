@@ -20,9 +20,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 import feign.Param.Expander;
 
+/**
+ * TODO: 存储了方法的元信息
+ */
 public final class MethodMetadata implements Serializable {
 
   private static final long serialVersionUID = 1L;
+  /**
+   * TODO：由类名和方法名以及入参组成的key
+   */
   private String configKey;
   private transient Type returnType;
   private Integer urlIndex;

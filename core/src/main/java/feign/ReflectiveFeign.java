@@ -90,6 +90,9 @@ public class ReflectiveFeign extends Feign {
     static class FeignInvocationHandler implements InvocationHandler {
 
         private final Target target;
+        /**
+         * TODO: 方法分发器，每一个method对应一个MethodHandler
+         */
         private final Map<Method, MethodHandler> dispatch;
 
         FeignInvocationHandler(Target target, Map<Method, MethodHandler> dispatch) {
@@ -172,6 +175,7 @@ public class ReflectiveFeign extends Feign {
 
         public Map<String, MethodHandler> apply(Target target) {
             // TODO: 通过contract提取出该类所有方法的元数据信息，MethodMetadata, 它会解析注解，不同的实现支持的注解是不一样的
+            // TODO: 会去解析类上，方法上，参数上的所有的注解
             List<MethodMetadata> metadata = contract.parseAndValidateMetadata(target.type());
             // TODO: 一个方法一个方法的处理，生成器对应的MethodHandler处理器
             Map<String, MethodHandler> result = new LinkedHashMap<String, MethodHandler>();
@@ -195,6 +199,7 @@ public class ReflectiveFeign extends Feign {
                     });
                 } else {
                     // TODO: 通过factory.create创建出MethodHandler实例，缓存结果
+                    // TODO: 这里可以知道每个方法 都对应了一个 SynchronousMethodHandler
                     result.put(md.configKey(),
                             factory.create(target, md, buildTemplate, options, decoder, errorDecoder));
                 }
@@ -203,6 +208,9 @@ public class ReflectiveFeign extends Feign {
         }
     }
 
+    /**
+     * TODO:
+     */
     private static class BuildTemplateByResolvingArgs implements RequestTemplate.Factory {
 
         private final QueryMapEncoder queryMapEncoder;
