@@ -82,6 +82,9 @@ final class SynchronousMethodHandler implements MethodHandler {
    * 解码器，对response进行解码
    */
   private final Decoder decoder;
+  /**
+   * TODO: 异步响应处理器
+   */
   private final AsyncResponseHandler asyncResponseHandler;
 
 
@@ -127,7 +130,7 @@ final class SynchronousMethodHandler implements MethodHandler {
     Retryer retryer = this.retryer.clone();
     while (true) {
       try {
-        // TODO: 执行并解码
+        // TODO: 执行并解码, 到这里就准备执行了
         return executeAndDecode(template, options);
       } catch (RetryableException e) {
         try {
@@ -151,16 +154,20 @@ final class SynchronousMethodHandler implements MethodHandler {
   }
 
   Object executeAndDecode(RequestTemplate template, Options options) throws Throwable {
+    // TODO: 这里就是解析request了，在这里面执行了著名的RequestInterceptor的拦截
+    // TODO: 通过target将requestTemplate转换为Request
     Request request = targetRequest(template);
 
+    // TODO: 打印日志
     if (logLevel != Logger.Level.NONE) {
       logger.logRequest(metadata.configKey(), logLevel, request);
     }
 
     Response response;
+    // TODO: 开始执行时间
     long start = System.nanoTime();
     try {
-      // TODO: client拿着request去执行
+      // TODO: client拿着request去执行，如果对feign记录请求日志，可以对client进行包装
       response = client.execute(request, options);
       // ensure the request is set. TODO: remove in Feign 12
       response = response.toBuilder()
@@ -180,6 +187,7 @@ final class SynchronousMethodHandler implements MethodHandler {
       // TODO: 解码喽
       return decoder.decode(response, metadata.returnType());
 
+    // TODO: 这里还用到了CompletableFuture
     CompletableFuture<Object> resultFuture = new CompletableFuture<>();
     asyncResponseHandler.handleResponse(resultFuture, metadata.configKey(), response,
         metadata.returnType(),
@@ -203,10 +211,12 @@ final class SynchronousMethodHandler implements MethodHandler {
   }
 
   Request targetRequest(RequestTemplate template) {
-    // TODO: 执行requestInterceptor中的apply方法
+    // TODO: 执行requestInterceptor中的apply方法，feign流出来的最重要的一个接口
     for (RequestInterceptor interceptor : requestInterceptors) {
+      // TODO: 挨个的执行requestInterceptor
       interceptor.apply(template);
     }
+    // TODO: 最后把RequestTemplate转换成了Request
     return target.apply(template);
   }
 
@@ -214,7 +224,9 @@ final class SynchronousMethodHandler implements MethodHandler {
     if (argv == null || argv.length == 0) {
       return this.options;
     }
+    // TODO: 查找入参是Options类型的
     return Stream.of(argv)
+            // TODO: 查找到Options类型的入参，然后进行强转，之后拿出来第一个
         .filter(Options.class::isInstance)
         .map(Options.class::cast)
         .findFirst()

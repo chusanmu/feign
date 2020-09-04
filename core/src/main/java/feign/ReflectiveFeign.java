@@ -80,7 +80,7 @@ public class ReflectiveFeign extends Feign {
         InvocationHandler handler = factory.create(target, methodToHandler);
         T proxy = (T) Proxy.newProxyInstance(target.type().getClassLoader(),
                 new Class<?>[]{target.type()}, handler);
-        // TODO: 进行bind绑定
+        // TODO: 进行bind绑定，把default方法 绑定到当前的proxy上面
         for (DefaultMethodHandler defaultMethodHandler : defaultMethodHandlers) {
             defaultMethodHandler.bindTo(proxy);
         }
@@ -175,7 +175,6 @@ public class ReflectiveFeign extends Feign {
 
         public Map<String, MethodHandler> apply(Target target) {
             // TODO: 通过contract提取出该类所有方法的元数据信息，MethodMetadata, 它会解析注解，不同的实现支持的注解是不一样的
-            // TODO: 会去解析类上，方法上，参数上的所有的注解
             List<MethodMetadata> metadata = contract.parseAndValidateMetadata(target.type());
             // TODO: 一个方法一个方法的处理，生成器对应的MethodHandler处理器
             Map<String, MethodHandler> result = new LinkedHashMap<String, MethodHandler>();
@@ -184,10 +183,9 @@ public class ReflectiveFeign extends Feign {
                 // TODO: 针对不同元数据参数，调用不同的RequestTemplate.Factory实现类完成处理
                 if (!md.formParams().isEmpty() && md.template().bodyTemplate() == null) {
                     // TODO: 若存在表单参数formParams, 并且没有body模板，就执行表单形式的构建
-                    buildTemplate =
-                            new BuildFormEncodedTemplateFromArgs(md, encoder, queryMapEncoder, target);
+                    buildTemplate = new BuildFormEncodedTemplateFromArgs(md, encoder, queryMapEncoder, target);
                 } else if (md.bodyIndex() != null) {
-                    // TODO: 存在body的话 就是body
+                    // TODO: 存在body的话 就是body，会进行编码
                     buildTemplate = new BuildEncodedTemplateFromArgs(md, encoder, queryMapEncoder, target);
                 } else {
                     // TODO: 否则就是普通形式，查询参数构建方式
@@ -209,7 +207,7 @@ public class ReflectiveFeign extends Feign {
     }
 
     /**
-     * TODO:
+     * TODO: 处理带有 @Body注解的方法，它还有两个子类，一个用于处理form表单编码，一个用于带有自动编码，记住这个自动编码的很重要，就可以利用spring去进行整合了，(编码为json串)
      */
     private static class BuildTemplateByResolvingArgs implements RequestTemplate.Factory {
 
@@ -249,49 +247,64 @@ public class ReflectiveFeign extends Feign {
             // TODO: 先拷贝出来一份RequestTemplate出来，但这并不是最终要return的
             RequestTemplate mutable = RequestTemplate.from(metadata.template());
             mutable.feignTarget(target);
+            // TODO: 其实这里在解析参数的时候已经做完了，到这就看看你入参有没有 URI类型的参数，如果有，那target直接用你的
             if (metadata.urlIndex() != null) {
                 int urlIndex = metadata.urlIndex();
+                // TODO: 看看是否为空，如果为空，抛异常啊
                 checkArgument(argv[urlIndex] != null, "URI parameter %s was null", urlIndex);
+                // TODO: 直接设置target，为你传进来的那个
                 mutable.target(String.valueOf(argv[urlIndex]));
             }
             // TODO: varBuilder装载所有的k-v
+            // TODO: 处理 @Param注解 参数
             Map<String, Object> varBuilder = new LinkedHashMap<String, Object>();
             for (Entry<Integer, Collection<String>> entry : metadata.indexToName().entrySet()) {
                 int i = entry.getKey();
+                // TODO: 把@Parm位置 对应的第几个参数 的值拿到 也就是当前参数对应的值
                 Object value = argv[entry.getKey()];
+                // TODO: 不等于空 才去处理
                 if (value != null) { // Null values are skipped.
+                    // TODO: indexToExpander 默认采用toString方法去处理
                     if (indexToExpander.containsKey(i)) {
+                        // TODO: 把当前 indexToExpander 处理后的value拿到
                         value = expandElements(indexToExpander.get(i), value);
                     }
+                    // TODO: 把当前name, 对应的 value 挨个添加到map中
                     for (String name : entry.getValue()) {
                         varBuilder.put(name, value);
                     }
                 }
             }
             // TODO: 调用RequestTemplate#resolve()方法，得到一个全新的实例
+            // TODO: varBuilder里面存的是@Parm解析出来的所有的变量
             RequestTemplate template = resolve(argv, mutable, varBuilder);
-            // TODO: 支持queryMap
+            // TODO: 支持queryMap，如果queryMapIndex不为空，表明有QueryMap注解啊
             if (metadata.queryMapIndex() != null) {
                 // add query map parameters after initial resolve so that they take
                 // precedence over any predefined values
+                // TODO: 把queryMapIndex对应的value拿到
                 Object value = argv[metadata.queryMapIndex()];
+                // TODO: 就给转成map喽
                 Map<String, Object> queryMap = toQueryMap(value);
+                // TODO: 添加query参数
                 template = addQueryMapQueryParameters(queryMap, template);
             }
             // TODO: 支持headerMap
             if (metadata.headerMapIndex() != null) {
-                template =
-                        addHeaderMapHeaders((Map<String, Object>) argv[metadata.headerMapIndex()], template);
+                // TODO: 直接把headMap对应的值转为Map 加到了 headerMap中
+                template = addHeaderMapHeaders((Map<String, Object>) argv[metadata.headerMapIndex()], template);
             }
 
             return template;
         }
 
         private Map<String, Object> toQueryMap(Object value) {
+            // TODO: 如果你的value本身就是个Map，ok，那就强转一下返回喽
             if (value instanceof Map) {
                 return (Map<String, Object>) value;
             }
             try {
+                // TODO: 使用map的编码器，对value进行编码
                 return queryMapEncoder.encode(value);
             } catch (EncodeException e) {
                 throw new IllegalStateException(e);
@@ -331,7 +344,7 @@ public class ReflectiveFeign extends Feign {
                 } else {
                     values.add(currValue == null ? null : currValue.toString());
                 }
-
+                // TODO: 添加header头，把key和value加进去
                 mutable.header(currEntry.getKey(), values);
             }
             return mutable;
@@ -371,6 +384,7 @@ public class ReflectiveFeign extends Feign {
         protected RequestTemplate resolve(Object[] argv,
                                           RequestTemplate mutable,
                                           Map<String, Object> variables) {
+            // TODO: 意思就是去解析变量
             return mutable.resolve(variables);
         }
     }
@@ -429,6 +443,7 @@ public class ReflectiveFeign extends Feign {
             Object body = argv[metadata.bodyIndex()];
             checkArgument(body != null, "Body parameter %s was null", metadata.bodyIndex());
             try {
+                // TODO: 先去编码，编码完，把编码后的数据放进mutable中, 然后交给父类去resolve
                 encoder.encode(body, metadata.bodyType(), mutable);
             } catch (EncodeException e) {
                 throw e;

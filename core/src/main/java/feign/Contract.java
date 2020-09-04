@@ -254,7 +254,7 @@ public interface Contract {
      * links a parameter name to its index in the method signature.
      */
     protected void nameParam(MethodMetadata data, String name, int i) {
-      // TODO:
+      // TODO: 设置Parm注解相关值
       final Collection<String> names =
           data.indexToName().containsKey(i) ? data.indexToName().get(i) : new ArrayList<String>();
       names.add(name);
@@ -325,11 +325,11 @@ public interface Contract {
         // TODO: 校验，检查是否为空
         checkState(emptyToNull(body) != null, "Body annotation was empty on method %s.",
             data.configKey());
-        // TODO: 如果第一个就是{ 直接设置body 否则设置bodyTemplate
+        // TODO: 如果你没有用{包裹，那就直接把@Body()注解里面的值，当成body体
         if (body.indexOf('{') == -1) {
           data.template().body(body);
         } else {
-          // TODO: 否则作为一个body模板放进去
+          // TODO: 否则作为一个body模板放进去 ---》 存在 {
           data.template().bodyTemplate(body);
         }
       });

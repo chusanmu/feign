@@ -181,42 +181,51 @@ public final class RequestTemplate implements Serializable {
    */
   public RequestTemplate resolve(Map<String, ?> variables) {
 
+    // TODO: 先构建了一个StringBuilder
     StringBuilder uri = new StringBuilder();
 
     /* create a new template form this one, but explicitly */
     // TODO: 在基础上复制一份出来，所以操作的是最新的
     RequestTemplate resolved = RequestTemplate.from(this);
 
-    // TODO: 解析uriTemplate
+    // TODO: 解析uriTemplate，如果uriTemplate为空，好么，那就创建个空的
     if (this.uriTemplate == null) {
       /* create a new uri template using the default root */
       this.uriTemplate = UriTemplate.create("", !this.decodeSlash, this.charset);
     }
-
+    // TODO: 调用expand方法去填充uriTemplate，使用variables去填充
     String expanded = this.uriTemplate.expand(variables);
     if (expanded != null) {
+      // TODO: 如果expanded不为空，那就把它加到uri上面
       uri.append(expanded);
     }
 
     /*
-       TODO: 解析查询参数模板，这块比较复制，用&进行连接
+       TODO: 解析查询参数模板，这块比较复杂，用&进行连接
      * for simplicity, combine the queries into the uri and use the resulting uri to seed the
      * resolved template.
+     TODO: 如果queries不为空
      */
     if (!this.queries.isEmpty()) {
       /*
        * since we only want to keep resolved query values, reset any queries on the resolved copy
        */
       resolved.queries(Collections.emptyMap());
+      // TODO: 创建了一个query
       StringBuilder query = new StringBuilder();
       // TODO: 处理模板，一个模板一个模板的处理
       Iterator<QueryTemplate> queryTemplates = this.queries.values().iterator();
 
+      // TODO: 遍历所有的queries
       while (queryTemplates.hasNext()) {
         QueryTemplate queryTemplate = queryTemplates.next();
+        // TODO: 去填充queryTemplate
         String queryExpanded = queryTemplate.expand(variables);
+        // TODO: 如果返回值不为空
         if (Util.isNotBlank(queryExpanded)) {
+          // TODO: query就把它拼上
           query.append(queryExpanded);
+          // TODO: 如果还有queryTemplate，ok，那拼个&
           if (queryTemplates.hasNext()) {
             query.append("&");
           }
@@ -226,6 +235,7 @@ public final class RequestTemplate implements Serializable {
       String queryString = query.toString();
       if (!queryString.isEmpty()) {
         Matcher queryMatcher = QUERY_STRING_PATTERN.matcher(uri);
+        // TODO: 判断是往下拼 & 还是 ? ，如果有query参数了，那肯定接着拼& ,否则拼?
         if (queryMatcher.find()) {
           /* the uri already has a query, so any additional queries should be appended */
           uri.append("&");
@@ -256,6 +266,7 @@ public final class RequestTemplate implements Serializable {
           /* split off the header values and add it to the resolved template */
           String headerValues = header.substring(header.indexOf(" ") + 1);
           if (!headerValues.isEmpty()) {
+            // TODO: 添加请求头
             /* append the header as a new literal as the value has already been expanded. */
             resolved.header(headerTemplate.getName(), Literal.create(headerValues));
           }
@@ -264,10 +275,12 @@ public final class RequestTemplate implements Serializable {
     }
     // TODO: 处理body模板，body里持有bodyTemplate的引用，所以底层依旧是bodyTemplate.expend(variables)
     if (this.bodyTemplate != null) {
+      // TODO: 解析body模板，然后加到body里面去
       resolved.body(this.bodyTemplate.expand(variables));
     }
 
     /* mark the new template resolved */
+    // TODO: 最后标记解析完成，返回
     resolved.resolved = true;
     return resolved;
   }
@@ -300,6 +313,7 @@ public final class RequestTemplate implements Serializable {
     if (!this.resolved) {
       throw new IllegalStateException("template has not been resolved.");
     }
+    // TODO: 创建出来一个Request
     return Request.create(this.method, this.url(), this.headers(), this.body, this);
   }
 

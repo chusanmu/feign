@@ -14,6 +14,7 @@
 package feign;
 
 /**
+ * TODO: feign流出来的最重要的一个接口，RequestInterceptor，用户可以通过实现apply方法 来给请求添加请求头等数据
  * Zero or more {@code RequestInterceptors} may be configured for purposes such as adding headers to
  * all requests. No guarantees are give with regards to the order that interceptors are applied.
  * Once interceptors are applied, {@link Target#apply(RequestTemplate)} is called to create the
