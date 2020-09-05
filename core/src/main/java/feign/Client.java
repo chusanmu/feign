@@ -151,7 +151,9 @@ public interface Client {
     }
 
     HttpURLConnection convertAndSend(Request request, Options options) throws IOException {
+      // TODO: 创建一个url
       final URL url = new URL(request.url());
+      // TODO: 原生HttpClient,就是使用了java里面的 HttpURLConnection
       final HttpURLConnection connection = this.getConnection(url);
       if (connection instanceof HttpsURLConnection) {
         HttpsURLConnection sslCon = (HttpsURLConnection) connection;
@@ -162,12 +164,16 @@ public interface Client {
           sslCon.setHostnameVerifier(hostnameVerifier);
         }
       }
+      // TODO: 设置连接超时时间
       connection.setConnectTimeout(options.connectTimeoutMillis());
+      // TODO: 设置请求超时时间
       connection.setReadTimeout(options.readTimeoutMillis());
       connection.setAllowUserInteraction(false);
       connection.setInstanceFollowRedirects(options.isFollowRedirects());
+      // TODO: 设置请求方式，get post put
       connection.setRequestMethod(request.httpMethod().name());
 
+      // TODO: 设置请求头，Content_Encoding
       Collection<String> contentEncodingValues = request.headers().get(CONTENT_ENCODING);
       boolean gzipEncodedRequest =
           contentEncodingValues != null && contentEncodingValues.contains(ENCODING_GZIP);
@@ -176,50 +182,63 @@ public interface Client {
 
       boolean hasAcceptHeader = false;
       Integer contentLength = null;
+      // TODO: 看看请求头里面有没有Accept字段
       for (String field : request.headers().keySet()) {
         if (field.equalsIgnoreCase("Accept")) {
           hasAcceptHeader = true;
         }
         for (String value : request.headers().get(field)) {
+          // TODO: 看有没有content_length字段
           if (field.equals(CONTENT_LENGTH)) {
             if (!gzipEncodedRequest && !deflateEncodedRequest) {
+              // TODO: 设置content_length
               contentLength = Integer.valueOf(value);
               connection.addRequestProperty(field, value);
             }
           } else {
+            // TODO: 设置请求头
             connection.addRequestProperty(field, value);
           }
         }
       }
       // Some servers choke on the default accept string.
+      // TODO: 如果你没设置accept，那默认就全接受了
       if (!hasAcceptHeader) {
         connection.addRequestProperty("Accept", "*/*");
       }
-
+      // TODO: 如果body体不为空
       if (request.body() != null) {
         if (disableRequestBuffering) {
           if (contentLength != null) {
+            // TODO: 存在contentLength的情况
             connection.setFixedLengthStreamingMode(contentLength);
           } else {
+            // TODO: 设置缓存块
             connection.setChunkedStreamingMode(8196);
           }
         }
         connection.setDoOutput(true);
+        // TODO: 获得输出流，开始写出去
         OutputStream out = connection.getOutputStream();
+        // TODO: 如果开启了gzip压缩
         if (gzipEncodedRequest) {
+          // TODO: 使用gzip包装流
           out = new GZIPOutputStream(out);
         } else if (deflateEncodedRequest) {
           out = new DeflaterOutputStream(out);
         }
         try {
+          // TODO: 最后写出流，把body体写出
           out.write(request.body());
         } finally {
           try {
+            // TODO: 关闭输出流
             out.close();
           } catch (IOException suppressed) { // NOPMD
           }
         }
       }
+      // TODO: 最后把连接返回回去，一个请求就完成了
       return connection;
     }
   }

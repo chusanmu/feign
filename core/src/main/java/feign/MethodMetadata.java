@@ -30,12 +30,33 @@ public final class MethodMetadata implements Serializable {
    * TODO：由类名和方法名以及入参组成的key
    */
   private String configKey;
+  /**
+   * TODO: 方法返回值的类型
+   */
   private transient Type returnType;
+
+  /* ---------------- 下面几个变量用于标记入参 -------------- */
+
+  /**
+   * TODO: 标记入参 ，入参如果有URI类型的参数，那么用此变量来标记位置
+   */
   private Integer urlIndex;
+  /**
+   * TODO: 用来标记 body体 的角标
+   */
   private Integer bodyIndex;
+  /**
+   * TODO: 如果有@HeaderMap，设置headerMap下标
+   */
   private Integer headerMapIndex;
+  /**
+   * TODO: 设置queryMap下标
+   */
   private Integer queryMapIndex;
   private boolean queryMapEncoded;
+  /**
+   * TODO: body体类型
+   */
   private transient Type bodyType;
   private final RequestTemplate template = new RequestTemplate();
   private final List<String> formParams = new ArrayList<String>();
@@ -202,11 +223,13 @@ public final class MethodMetadata implements Serializable {
   }
 
   /**
+   * TODO: 判断这个角标，对应的入参 有没有被解析
    * @param index
    * @return true if the parameter {@code index} was already consumed by a any
    *         {@link MethodMetadata} holder
    */
   public boolean isAlreadyProcessed(Integer index) {
+    // TODO: 如果下面任意一个不为空，就表示这个角标对应的入参被解析过了
     return index.equals(urlIndex)
         || index.equals(bodyIndex)
         || index.equals(headerMapIndex)

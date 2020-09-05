@@ -292,6 +292,7 @@ public abstract class Feign {
     }
 
     public Feign build() {
+      // TODO: 进行各个组件的赋值
       Client client = Capability.enrich(this.client, capabilities);
       Retryer retryer = Capability.enrich(this.retryer, capabilities);
       List<RequestInterceptor> requestInterceptors = this.requestInterceptors.stream()

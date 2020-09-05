@@ -48,6 +48,11 @@ public class ReflectiveFeign extends Feign {
     }
 
     /**
+     * TODO: 根据target中封装的接口来生成代理对象
+     * 1. 生成每个method对应的MethodHandler，每个method对应了一个方法执行器
+     * 2. 设置处理Default方法
+     * 3. InvocationHandler工厂生成InvocationHandler,然后使用JDK的动态代理生成代理对象，绑定目标接口中的default method.
+     *
      * creates an api binding to the {@code target}. As this invokes reflection, care should be taken
      * to cache the result.
      */
@@ -78,10 +83,12 @@ public class ReflectiveFeign extends Feign {
         }
         // TODO: 为该目标接口类型创建一个InvocationHandler, 它持有methodToHandler这个Map, 负责全局调度所有的Method方法，并且为此接口创建一个代理对象
         InvocationHandler handler = factory.create(target, methodToHandler);
+        // TODO: 使用JDK代理接口，创建代理对象
         T proxy = (T) Proxy.newProxyInstance(target.type().getClassLoader(),
                 new Class<?>[]{target.type()}, handler);
         // TODO: 进行bind绑定，把default方法 绑定到当前的proxy上面
         for (DefaultMethodHandler defaultMethodHandler : defaultMethodHandlers) {
+            // TODO: 把每个default方法绑定到proxy上面，这样生成的代理对象就具有执行默认方法的能力了
             defaultMethodHandler.bindTo(proxy);
         }
         return proxy;
@@ -100,8 +107,17 @@ public class ReflectiveFeign extends Feign {
             this.dispatch = checkNotNull(dispatch, "dispatch for %s", target);
         }
 
+        /**
+         * TODO: 由于被代理了，那么接口中的每个方法都会经过此
+         * @param proxy
+         * @param method
+         * @param args
+         * @return
+         * @throws Throwable
+         */
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            // TODO: equals, hashCode, toString方法进行默认处理
             if ("equals".equals(method.getName())) {
                 try {
                     Object otherHandler =
@@ -116,6 +132,7 @@ public class ReflectiveFeign extends Feign {
                 return toString();
             }
             // TODO: 默认委托给了 SynchronousMethodHandler 去执行，发送http请求，或者调用接口本地方法
+            // TODO: 每个方法都对应了一个方法执行器
             return dispatch.get(method).invoke(args);
         }
 
@@ -173,6 +190,15 @@ public class ReflectiveFeign extends Feign {
             this.decoder = checkNotNull(decoder, "decoder");
         }
 
+        /**
+         * TODO: 这里也算是个核心方法，
+         * 1.利用Contract解析target中的封装的接口
+         * 2.根据方法元信息创建不同的 BuildTemplateByResolvingArgs
+         * 3.为每个方法生成 SynchronousMethodHandler
+         *
+         * @param target
+         * @return
+         */
         public Map<String, MethodHandler> apply(Target target) {
             // TODO: 通过contract提取出该类所有方法的元数据信息，MethodMetadata, 它会解析注解，不同的实现支持的注解是不一样的
             List<MethodMetadata> metadata = contract.parseAndValidateMetadata(target.type());
@@ -208,6 +234,7 @@ public class ReflectiveFeign extends Feign {
 
     /**
      * TODO: 处理带有 @Body注解的方法，它还有两个子类，一个用于处理form表单编码，一个用于带有自动编码，记住这个自动编码的很重要，就可以利用spring去进行整合了，(编码为json串)
+     * TODO: 见名知意呀，通过入参来解析成RequestTemplate
      */
     private static class BuildTemplateByResolvingArgs implements RequestTemplate.Factory {
 
@@ -229,6 +256,7 @@ public class ReflectiveFeign extends Feign {
             if (metadata.indexToExpanderClass().isEmpty()) {
                 return;
             }
+            // TODO: 初始化参数填充器
             for (Entry<Integer, Class<? extends Expander>> indexToExpanderClass : metadata
                     .indexToExpanderClass().entrySet()) {
                 try {
@@ -242,6 +270,11 @@ public class ReflectiveFeign extends Feign {
             }
         }
 
+        /**
+         * TODO: 具体运行时，会执行到这里，根据metadata接合入参来生成RequestTemplate,而metadata的初始化在生成代理对象之前就已经做完了
+         * @param argv
+         * @return
+         */
         @Override
         public RequestTemplate create(Object[] argv) {
             // TODO: 先拷贝出来一份RequestTemplate出来，但这并不是最终要return的
@@ -262,21 +295,23 @@ public class ReflectiveFeign extends Feign {
                 int i = entry.getKey();
                 // TODO: 把@Parm位置 对应的第几个参数 的值拿到 也就是当前参数对应的值
                 Object value = argv[entry.getKey()];
-                // TODO: 不等于空 才去处理
+                // TODO: 实际上你传的入参 不等于空 才去处理
                 if (value != null) { // Null values are skipped.
                     // TODO: indexToExpander 默认采用toString方法去处理
+                    // TODO: 这个参数对应的indexToExpander不为空
                     if (indexToExpander.containsKey(i)) {
                         // TODO: 把当前 indexToExpander 处理后的value拿到
                         value = expandElements(indexToExpander.get(i), value);
                     }
                     // TODO: 把当前name, 对应的 value 挨个添加到map中
                     for (String name : entry.getValue()) {
+                        // TODO: 把变量名称，和对应的解析完的值 保存起来
                         varBuilder.put(name, value);
                     }
                 }
             }
             // TODO: 调用RequestTemplate#resolve()方法，得到一个全新的实例
-            // TODO: varBuilder里面存的是@Parm解析出来的所有的变量
+            // TODO: varBuilder里面存的是@Parm解析出来的所有的变量，执行完此方法，模板里面的值都被解析完毕
             RequestTemplate template = resolve(argv, mutable, varBuilder);
             // TODO: 支持queryMap，如果queryMapIndex不为空，表明有QueryMap注解啊
             if (metadata.queryMapIndex() != null) {
@@ -284,7 +319,7 @@ public class ReflectiveFeign extends Feign {
                 // precedence over any predefined values
                 // TODO: 把queryMapIndex对应的value拿到
                 Object value = argv[metadata.queryMapIndex()];
-                // TODO: 就给转成map喽
+                // TODO: 就给转成map喽, 这里java bean也可以被转换成map
                 Map<String, Object> queryMap = toQueryMap(value);
                 // TODO: 添加query参数
                 template = addQueryMapQueryParameters(queryMap, template);
@@ -315,6 +350,7 @@ public class ReflectiveFeign extends Feign {
             if (value instanceof Iterable) {
                 return expandIterable(expander, (Iterable) value);
             }
+            // TODO: 默认使用toString的方式去填充
             return expander.expand(value);
         }
 
@@ -355,7 +391,7 @@ public class ReflectiveFeign extends Feign {
                                                            RequestTemplate mutable) {
             for (Entry<String, Object> currEntry : queryMap.entrySet()) {
                 Collection<String> values = new ArrayList<String>();
-
+                // TODO: encoded 默认false
                 boolean encoded = metadata.queryMapEncoded();
                 Object currValue = currEntry.getValue();
                 if (currValue instanceof Iterable<?>) {
@@ -390,7 +426,7 @@ public class ReflectiveFeign extends Feign {
     }
 
     /**
-     *
+     * TODO: 处理form表单类型
      */
     private static class BuildFormEncodedTemplateFromArgs extends BuildTemplateByResolvingArgs {
 
@@ -407,12 +443,14 @@ public class ReflectiveFeign extends Feign {
                                           RequestTemplate mutable,
                                           Map<String, Object> variables) {
             Map<String, Object> formVariables = new LinkedHashMap<String, Object>();
+            // TODO: 把form表单对应的name和value挑出来
             for (Entry<String, Object> entry : variables.entrySet()) {
                 if (metadata.formParams().contains(entry.getKey())) {
                     formVariables.put(entry.getKey(), entry.getValue());
                 }
             }
             try {
+                // TODO: 使用编码器进行编码，编码完成后，body里面就有了值
                 encoder.encode(formVariables, Encoder.MAP_STRING_WILDCARD, mutable);
             } catch (EncodeException e) {
                 throw e;

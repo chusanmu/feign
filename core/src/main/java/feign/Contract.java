@@ -95,7 +95,7 @@ public interface Contract {
      * Called indirectly by {@link #parseAndValidateMetadata(Class)}.
      */
     protected MethodMetadata parseAndValidateMetadata(Class<?> targetType, Method method) {
-      // TODO: 直接创建了一个MethodMeatadata
+      // TODO: 直接创建了一个MethodMetadata
       final MethodMetadata data = new MethodMetadata();
       // TODO: 把targetType，也就是接口类型设置进去
       data.targetType(targetType);
@@ -136,6 +136,7 @@ public interface Contract {
       // TODO: 一个个的去处理
       for (int i = 0; i < count; i++) {
         boolean isHttpAnnotation = false;
+        // TODO: 如果不为空，那就去处理
         if (parameterAnnotations[i] != null) {
           // TODO: 一样的交给子类去处理
           isHttpAnnotation = processAnnotationsOnParameter(data, parameterAnnotations[i], i);
@@ -148,17 +149,21 @@ public interface Contract {
         if (parameterTypes[i] == URI.class) {
           data.urlIndex(i);
         } else if (!isHttpAnnotation && parameterTypes[i] != Request.Options.class) {
+          // TODO: 如果这个入参被解析过了
           if (data.isAlreadyProcessed(i)) {
+            // TODO: 如果formParams不为空，并且bodyIndex不为空，抛异常 body类型的入参 不能被form入参使用
+            // TODO: 对于feign而言你使用 @Body 来用于表单提交，是不可以的
             checkState(data.formParams().isEmpty() || data.bodyIndex() == null,
                 "Body parameters cannot be used with form parameters.%s", data.warnings());
           } else {
-            // TODO: 一般会走到这里
+            // TODO: 一般会走到这里，表示 没有任何注解修饰这个入参，或者有注解，但是没被处理，那么会被当成body去处理
             checkState(data.formParams().isEmpty(),
                 "Body parameters cannot be used with form parameters.%s", data.warnings());
             checkState(data.bodyIndex() == null,
                 "Method has too many Body parameters: %s%s", method, data.warnings());
             // TODO: 参数角标，参数类型
             data.bodyIndex(i);
+            // TODO: 设置body参数类型
             data.bodyType(Types.resolve(targetType, targetType, genericParameterTypes[i]));
           }
         }
@@ -254,7 +259,7 @@ public interface Contract {
      * links a parameter name to its index in the method signature.
      */
     protected void nameParam(MethodMetadata data, String name, int i) {
-      // TODO: 设置Parm注解相关值
+      // TODO: 设置Param注解相关值
       final Collection<String> names =
           data.indexToName().containsKey(i) ? data.indexToName().get(i) : new ArrayList<String>();
       names.add(name);

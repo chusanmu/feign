@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
+ * TODO: 通过内省的方式将 java bean转换成map
  * the query map will be generated using java beans accessible getter property as query parameter
  * names.
  *
