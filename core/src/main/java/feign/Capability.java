@@ -22,6 +22,7 @@ import feign.codec.Decoder;
 import feign.codec.Encoder;
 
 /**
+ * TODO: 增强器，这地方设计的很巧妙
  * Capabilities expose core feign artifacts to implementations so parts of core can be customized
  * around the time the client being built.
  *
@@ -33,7 +34,15 @@ import feign.codec.Encoder;
 public interface Capability {
 
 
+  /**
+   * TODO: componentToEnrich 需要被增强的某一组件，capabilities 增强们
+   * @param componentToEnrich
+   * @param capabilities
+   * @param <E>
+   * @return
+   */
   static <E> E enrich(E componentToEnrich, List<Capability> capabilities) {
+    // TODO: 使用流的方式去执行增强，这地方很巧妙
     return capabilities.stream()
         // invoke each individual capability and feed the result to the next one.
         // This is equivalent to:
@@ -53,20 +62,28 @@ public interface Capability {
   }
 
   static <E> E invoke(E target, Capability capability) {
+    // TODO: 把里面的所有的方法拿到
     return Arrays.stream(capability.getClass().getMethods())
+            // TODO: 把增强方法拿到
         .filter(method -> method.getName().equals("enrich"))
+            // TODO: 增强后的类型不能变
         .filter(method -> method.getReturnType().isInstance(target))
         .findFirst()
         .map(method -> {
           try {
+            // TODO: 执行增强方法
             return (E) method.invoke(capability, target);
           } catch (IllegalAccessException | IllegalArgumentException
               | InvocationTargetException e) {
             throw new RuntimeException("Unable to enrich " + target, e);
           }
         })
+            // TODO: 否则返回目标方法
         .orElse(target);
   }
+
+
+  /* ---------------- 可以对下面的组件进行增强 -------------- */
 
   default Client enrich(Client client) {
     return client;

@@ -32,6 +32,7 @@ public interface LBClientFactory {
     public LBClient create(String clientName) {
       IClientConfig config =
           ClientFactory.getNamedConfig(clientName, DisableAutoRetriesByDefaultClientConfig.class);
+      // TODO: 获得ILoadBalancer
       ILoadBalancer lb = ClientFactory.getNamedLoadBalancer(clientName);
       return LBClient.create(lb, config);
     }

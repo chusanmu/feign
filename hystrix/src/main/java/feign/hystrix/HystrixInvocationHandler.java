@@ -85,6 +85,14 @@ final class HystrixInvocationHandler implements InvocationHandler {
     return result;
   }
 
+  /**
+   * TODO: feign请求的入口，所有方法的入口
+   * @param proxy
+   * @param method
+   * @param args
+   * @return
+   * @throws Throwable
+   */
   @Override
   public Object invoke(final Object proxy, final Method method, final Object[] args)
       throws Throwable {
@@ -104,6 +112,7 @@ final class HystrixInvocationHandler implements InvocationHandler {
       return toString();
     }
 
+    // TODO: 构建了一个HystrixCommand去执行请求
     HystrixCommand<Object> hystrixCommand =
         new HystrixCommand<Object>(setterMethodMap.get(method)) {
 
@@ -192,6 +201,7 @@ final class HystrixInvocationHandler implements InvocationHandler {
       // TODO: 包一层CompletableFuture
       return new ObservableCompletableFuture<>(hystrixCommand);
     }
+    // TODO: 真正的去执行
     return hystrixCommand.execute();
   }
 

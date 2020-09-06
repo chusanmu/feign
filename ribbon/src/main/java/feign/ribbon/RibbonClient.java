@@ -36,6 +36,9 @@ import java.net.URI;
  */
 public class RibbonClient implements Client {
 
+  /**
+   * 也是采用的委托，委派模式
+   */
   private final Client delegate;
   private final LBClientFactory lbClientFactory;
 
@@ -69,14 +72,25 @@ public class RibbonClient implements Client {
     this.lbClientFactory = lbClientFactory;
   }
 
+  /**
+   * TODO: 使用ribbon时，client执行请求的时候，会走到这
+   * @param request safe to replay.
+   * @param options options to apply to this request.
+   * @return
+   * @throws IOException
+   */
   @Override
   public Response execute(Request request, Request.Options options) throws IOException {
     try {
+      // TODO: 生成uri
       URI asUri = URI.create(request.url());
       String clientName = asUri.getHost();
+      // TODO: 把host去掉了
       URI uriWithoutHost = cleanUrl(request.url(), clientName);
+      // TODO: 创建ribbonRequest，最终使用LBClient去执行请求
       LBClient.RibbonRequest ribbonRequest =
           new LBClient.RibbonRequest(delegate, request, uriWithoutHost);
+      // TODO: 这里 clientName 这个应该就是服务名了，负载均衡执行
       return lbClient(clientName).executeWithLoadBalancer(ribbonRequest,
           new FeignOptionsClientConfig(options)).toResponse();
     } catch (ClientException e) {
@@ -98,6 +112,11 @@ public class RibbonClient implements Client {
     return URI.create(originalUrl.replaceFirst(host, ""));
   }
 
+  /**
+   * TODO: 根据clientName，使用factory创建出来一个LBClient
+   * @param clientName
+   * @return
+   */
   private LBClient lbClient(String clientName) {
     return lbClientFactory.create(clientName);
   }
@@ -122,6 +141,9 @@ public class RibbonClient implements Client {
 
   }
 
+  /**
+   * TODO: 采用builder模式构建RibbonClient
+   */
   public static final class Builder {
 
     Builder() {}
@@ -141,6 +163,7 @@ public class RibbonClient implements Client {
 
     public RibbonClient build() {
       return new RibbonClient(
+              // TODO: 如果delegate 不为空，则用你设置的，否则用默认的java自带的
           delegate != null ? delegate : new Client.Default(null, null),
           lbClientFactory != null ? lbClientFactory : new LBClientFactory.Default());
     }

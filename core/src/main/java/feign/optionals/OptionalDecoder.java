@@ -22,6 +22,10 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * TODO: 对返回值是Optional的 进行解码
+ * todo: 对java8 的Optional进行了支持
+ */
 public final class OptionalDecoder implements Decoder {
   final Decoder delegate;
 
@@ -32,20 +36,26 @@ public final class OptionalDecoder implements Decoder {
 
   @Override
   public Object decode(Response response, Type type) throws IOException {
+    // TODO: 如果不是Optional，那就直接使用delegate进行解码
     if (!isOptional(type)) {
       return delegate.decode(response, type);
     }
+    // TODO: 看看响应是否是404, 204，如果是，那就是没找到啊，直接创建了个空返回
     if (response.status() == 404 || response.status() == 204) {
       return Optional.empty();
     }
+    // TODO: 把泛型类型解析出来
     Type enclosedType = Util.resolveLastTypeParameter(type, Optional.class);
+    // TODO: 然后包到了Optional中
     return Optional.ofNullable(delegate.decode(response, enclosedType));
   }
 
   static boolean isOptional(Type type) {
+    // TODO: 如果它不带泛型，那肯定就不是Optional嘛，Optional<>是这种的
     if (!(type instanceof ParameterizedType)) {
       return false;
     }
+    // TODO: 下面就是判断是否是Optional了
     ParameterizedType parameterizedType = (ParameterizedType) type;
     return parameterizedType.getRawType().equals(Optional.class);
   }

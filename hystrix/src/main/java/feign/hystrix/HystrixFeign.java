@@ -143,6 +143,7 @@ public final class HystrixFeign {
         @Override
         public InvocationHandler create(Target target,
                                         Map<Method, MethodHandler> dispatch) {
+          // TODO: 这里创建的就是HystrixInvocationHandler了，就不是FeignInvocationHandler了
           return new HystrixInvocationHandler(target, dispatch, setterFactory,
               nullableFallbackFactory);
         }

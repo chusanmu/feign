@@ -45,6 +45,7 @@ public final class HystrixCapability implements Capability {
 
   @Override
   public InvocationHandlerFactory enrich(InvocationHandlerFactory invocationHandlerFactory) {
+    // TODO: 把invocationHandler进行包装，换成了HystrixInvocationHandler
     return (target, dispatch) -> new HystrixInvocationHandler(target, dispatch, setterFactory,
         fallbacks.containsKey(target.type())
             ? new FallbackFactory.Default<>(fallbacks.get(target.type()))

@@ -137,6 +137,9 @@ public abstract class Feign {
     // TODO: 异常传播策略，NONE代表不包装，不处理，直接抛出
     private ExceptionPropagationPolicy propagationPolicy = NONE;
     private boolean forceDecoding = false;
+    /**
+     * TODO：增强器，相当于包了一层，这地方很高级
+     */
     private List<Capability> capabilities = new ArrayList<>();
 
     public Builder logLevel(Logger.Level logLevel) {

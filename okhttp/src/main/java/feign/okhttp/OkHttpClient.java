@@ -35,6 +35,9 @@ import okhttp3.*;
  */
 public final class OkHttpClient implements Client {
 
+  /**
+   * 委派模式，委培给ok http3.下面的client去执行真正的请求
+   */
   private final okhttp3.OkHttpClient delegate;
 
   public OkHttpClient() {
@@ -52,6 +55,7 @@ public final class OkHttpClient implements Client {
     MediaType mediaType = null;
     boolean hasAcceptHeader = false;
     for (String field : input.headers().keySet()) {
+      // TODO: 查找下，看看请求头里面有没有Accept
       if (field.equalsIgnoreCase("Accept")) {
         hasAcceptHeader = true;
       }
@@ -61,16 +65,18 @@ public final class OkHttpClient implements Client {
         if (field.equalsIgnoreCase("Content-Type")) {
           mediaType = MediaType.parse(value);
           if (input.charset() != null) {
+            // TODO: 设置编码方式
             mediaType.charset(input.charset());
           }
         }
       }
     }
     // Some servers choke on the default accept string.
+    // TODO: 如果请求头里面没有accept，那就设置全都接受
     if (!hasAcceptHeader) {
       requestBuilder.addHeader("Accept", "*/*");
     }
-
+    // TODO: 把请求体拿到
     byte[] inputBody = input.body();
     boolean isMethodWithBody =
         HttpMethod.POST == input.httpMethod() || HttpMethod.PUT == input.httpMethod()
@@ -84,6 +90,7 @@ public final class OkHttpClient implements Client {
       }
     }
 
+    // TODO: 设置响应体，已经请求方式
     RequestBody body = inputBody != null ? RequestBody.create(mediaType, inputBody) : null;
     requestBuilder.method(input.httpMethod().name(), body);
     return requestBuilder.build();
@@ -154,6 +161,7 @@ public final class OkHttpClient implements Client {
   public feign.Response execute(feign.Request input, feign.Request.Options options)
       throws IOException {
     okhttp3.OkHttpClient requestScoped;
+    // TODO: 如果用户设置了超时时间，连接超时时间等等，那么就配置下 使用用户自己配置的
     if (delegate.connectTimeoutMillis() != options.connectTimeoutMillis()
         || delegate.readTimeoutMillis() != options.readTimeoutMillis()
         || delegate.followRedirects() != options.isFollowRedirects()) {
@@ -165,8 +173,10 @@ public final class OkHttpClient implements Client {
     } else {
       requestScoped = delegate;
     }
+    // TODO: 将feign的Request,转成 okHttp里面的request,相当于做了个适配
     Request request = toOkHttpRequest(input);
     Response response = requestScoped.newCall(request).execute();
+    // TODO: 同样响应也进行了适配
     return toFeignResponse(response, input).toBuilder().request(input).build();
   }
 }

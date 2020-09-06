@@ -41,6 +41,9 @@ import static java.lang.String.format;
  */
 public class LoadBalancingTarget<T> implements Target<T> {
 
+  /**
+   * TODO: 这里的name是服务名
+   */
   private final String name;
   private final String scheme;
   private final String path;
@@ -104,12 +107,17 @@ public class LoadBalancingTarget<T> implements Target<T> {
 
   @Override
   public Request apply(RequestTemplate input) {
+    // TODO: 这里默认是采用轮询的方式 从当前服务选取一台server
     Server currentServer = lb.chooseServer(null);
+    // TODO: 格式化url，然后设置url,注意这里有主机名和端口号
     String url = format("%s://%s%s", scheme, currentServer.getHostPort(), path);
+    // TODO: 把url设置进去
     input.target(url);
     try {
+      // TODO: 把RequestTemplate 转为 Request
       return input.request();
     } finally {
+      // TODO: 设置统计信息，个当前机器request请求此时+1
       lb.getLoadBalancerStats().incrementNumRequests(currentServer);
     }
   }

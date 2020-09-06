@@ -73,6 +73,7 @@ public final class LBClient extends
   public RibbonResponse execute(RibbonRequest request, IClientConfig configOverride)
       throws IOException, ClientException {
     Request.Options options;
+    // TODO: 设置连接超时 请求超时等参数
     if (configOverride != null) {
       options =
           new Request.Options(
